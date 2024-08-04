@@ -7,7 +7,20 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import React from 'react';
+import { ClerkLoaded, ClerkProvider } from '@clerk/clerk-expo';
 
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import ImagePickerComponent from './(tabs)/camera';
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+
+if (!publishableKey) {
+  throw new Error(
+    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env',
+  )
+}
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -42,18 +55,44 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return( 
+    
+    <ClerkProvider publishableKey={publishableKey}>
+  <RootLayoutNav />
+</ClerkProvider>
+
+  )
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const Drawer = createDrawerNavigator();
+  const Tabs = createBottomTabNavigator();
+  function TabsNavigator() {
+    return (
+      <Tabs.Navigator>
+        <Tabs.Screen name="Tab1" component={ImagePickerComponent} />
+        <Tabs.Screen name="Tab2" component={ImagePickerComponent} />
+        {/* Add more tabs as needed */}
+      </Tabs.Navigator>
+    );
+  }
 
   return (
+   
+   
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+   <Drawer.Navigator>
+        <Drawer.Screen name="(drawer)" component={TabsNavigator} options={{ headerShown: false }} />
+        {/* Add more drawer items as needed */}
+      </Drawer.Navigator>
+    
+    
+    
+    
+    
     </ThemeProvider>
+
+
   );
 }

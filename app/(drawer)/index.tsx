@@ -24,12 +24,10 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Image
-          source={{ uri: 'https://images.dog.ceo//breeds//poodle-miniature//n02113712_8473.jpg' }} // Replace with actual user image URL
-          style={styles.userImage}
-        />
-      </View>
+   
+   
+
+   
       <Text style={styles.title}>Latest Identifications</Text>
       <FlatList
         data={identifications}
