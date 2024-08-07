@@ -1,12 +1,13 @@
 export interface Identification {
-    identif: string;
-    "identif success": string;
-    facts: string[];
-  }
-  
-  export type IdentificationResponse = Identification[];
+  identif: string;
+  "identif success": string;
+  facts: string[];
+  imageUrl: string; // Ensure imageUrl is included
+}
 
-  export interface BackendResponse {
-    identifications: IdentificationResponse;
-    imageUrl: string;
-  }
+export type IdentificationResponse = Identification[];
+
+export interface BackendResponse {
+  identifications: IdentificationResponse;
+  imageUrls: string[]; // Add imageUrls to the response type
+}

@@ -1,7 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import axios from 'axios';
 import { Buffer } from 'buffer';
-import { IdentificationResponse } from '../types';
 import { BackendResponse } from '../types';
 
 export const uploadImageToR2 = async (uri: string): Promise<string> => {
@@ -20,6 +19,6 @@ export const uploadImageToR2 = async (uri: string): Promise<string> => {
 };
 
 export const identifyImage = async (imageUrl: string): Promise<BackendResponse> => {
-    const response = await axios.post<BackendResponse>('https://1e75-196-224-64-115.ngrok-free.app/identify', { imageUrl });
-    return response.data;
-  };
+  const response = await axios.post<BackendResponse>('https://cdbc-196-224-64-115.ngrok-free.app/identify', { imageUrl });
+  return response.data;
+};
