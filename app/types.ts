@@ -5,3 +5,8 @@ export interface Identification {
   }
   
   export type IdentificationResponse = Identification[];
+
+  export interface BackendResponse {
+    identifications: IdentificationResponse;
+    imageUrl: string;
+  }

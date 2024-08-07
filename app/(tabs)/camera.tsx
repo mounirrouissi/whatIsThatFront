@@ -10,7 +10,7 @@ import {
 } from 'expo-image-picker';
 import ImagePickerComponent from '../../components/ImagePickerComponent';
 import { uploadImageToR2, identifyImage } from '../services/uploadService';
-import { Identification } from '../types';
+import { Identification, BackendResponse } from '../types';
 
 const placeholderImage: ImageSourcePropType = require('../../assets/images/favicon.png'); // Replace with your actual placeholder image
 
@@ -18,6 +18,7 @@ export default function App() {
   const [image, setImage] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+    const [searchImageUrl, setSearchImageUrl] = useState<string | null>(null); // Store the search image URL
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [mediaLibraryPermission, requestMediaLibraryPermission] = useMediaLibraryPermissions();
 
@@ -69,19 +70,22 @@ export default function App() {
     try {
       const imageUrl = await uploadImageToR2(uri);
       console.log("imageUrl: " + imageUrl);
-      const identifyResponse = await identifyImage(imageUrl);
-      console.log("identification response received", identifyResponse);
+      const { identifications, imageUrl: returnedImageUrl } = await identifyImage(imageUrl);
+      console.log("identification response received", identifications);
+      console.log("imageUrl: " + imageUrl);
 
-      if (Array.isArray(identifyResponse)) {
-        identifyResponse.forEach((item: Identification) => {
+      if (Array.isArray(identifications)) {
+        identifications.forEach((item: Identification) => {
           console.log(`Identified: ${item.identif}`);
           console.log(`Success Rate: ${item["identif success"]}`);
           console.log('Facts:');
           item.facts.forEach(fact => console.log(`- ${fact}`));
         });
-        setDescription(identifyResponse[0].identif);
+        setDescription(identifications[0].identif);
+        setSearchImageUrl(returnedImageUrl); // Set the search image URL
+
       } else {
-        console.error('Unexpected response format:', identifyResponse);
+        console.error('Unexpected response format:', identifications);
         setDescription('Failed to identify image. Please try again.');
       }
     } catch (error) {
@@ -99,6 +103,8 @@ export default function App() {
         onGalleryPress={handleChooseFromGallery}
         image={image ? { uri: image } : null}
         placeholderImage={placeholderImage}
+        searchImageUrl={searchImageUrl} // Pass the search image URL
+
       />
       {description ? <Text style={styles.description}>Description: {description}</Text> : null}
       {isLoading && <Text>Loading...</Text>}

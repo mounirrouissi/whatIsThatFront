@@ -7,11 +7,20 @@ interface ImagePickerComponentProps {
   onGalleryPress: () => void;
   image: ImageSourcePropType | null;
   placeholderImage: ImageSourcePropType;
+  searchImageUrl?: string; // Add this prop
+
 }
 
-const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({ onCameraPress, onGalleryPress, image, placeholderImage }) => {
+
+const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({ onCameraPress, onGalleryPress, image, placeholderImage,searchImageUrl }) => {
   return (
     <View style={styles.container}>
+        {searchImageUrl ? (
+        <View style={styles.imageContainer}>
+          <Text style={styles.descriptionText}>Search Image:</Text>
+          <Image source={{ uri: searchImageUrl }} style={styles.selectedImage} />
+        </View>
+      ) : null}
       <View style={styles.imageContainer}>
         <Image source={image || placeholderImage} style={styles.selectedImage} />
       </View>
@@ -30,45 +39,50 @@ const ImagePickerComponent: React.FC<ImagePickerComponentProps> = ({ onCameraPre
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  imageContainer: {
-    marginBottom: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  selectedImage: {
-    width: 300,
-    height: 200,
-    resizeMode: 'cover',
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 5,
-  },
-  cameraButton: {
-    backgroundColor: '#007bff',
-  },
-  galleryButton: {
-    backgroundColor: '#28a745',
-  },
-});
+    container: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20,
+    },
+    imageContainer: {
+      marginBottom: 20,
+      borderRadius: 10,
+      overflow: 'hidden',
+    },
+    selectedImage: {
+      width: 300,
+      height: 200,
+      resizeMode: 'cover',
+    },
+    buttonsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      width: '100%',
+    },
+    button: {
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    buttonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginTop: 5,
+    },
+    cameraButton: {
+      backgroundColor: '#007bff',
+    },
+    galleryButton: {
+      backgroundColor: '#28a745',
+    },
+    descriptionText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 10,
+    },
+  });
 
 export default ImagePickerComponent;
