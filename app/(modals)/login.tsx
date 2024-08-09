@@ -76,10 +76,10 @@ const Page = () => {
           <Text style={styles.btnOutlineText}>Continue with Phone</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btnOutline} onPress={() => onSelectAuth(Strategy.Apple)}>
-          <Ionicons name="logo-apple" size={24} style={defaultStyles.btnIcon} />
-          <Text style={styles.btnOutlineText}>Continue with Apple</Text>
-        </TouchableOpacity>
+   
+   
+   
+   
 
         <TouchableOpacity style={styles.btnOutline} onPress={() => onSelectAuth(Strategy.Google)}>
           <Ionicons name="logo-google" size={24} style={defaultStyles.btnIcon} />
