@@ -72,20 +72,24 @@ const PaywallComponent = () => {
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText} onPress={openTermsModal}>Terms of Use</Text>
-            <Text style={styles.footerText} onPress={openPrivacyModal}>Privacy Policy</Text>
+            <TouchableOpacity onPress={openTermsModal}>
+              <Text style={styles.footerText}>Terms of Use</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={openPrivacyModal}>
+              <Text style={styles.footerText}>Privacy Policy</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </LinearGradient>
 
-      <Modalize ref={termsModalRef} snapPoint={400}>
+      <Modalize ref={termsModalRef} snapPoint={400} modalStyle={styles.modal}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Terms of Use</Text>
           <Text style={styles.modalText}>Here are the terms of use...</Text>
         </View>
       </Modalize>
 
-      <Modalize ref={privacyModalRef} snapPoint={400}>
+      <Modalize ref={privacyModalRef} snapPoint={400} modalStyle={styles.modal}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Privacy Policy</Text>
           <Text style={styles.modalText}>Here is the privacy policy...</Text>
@@ -127,6 +131,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     alignItems: 'center',
+    paddingTop: 40, // Added padding top
   },
   image: {
     width: 150,
@@ -219,6 +224,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textDecorationLine: 'underline',
   },
+  modal: {
+    backgroundColor: '#1E1E1E', // Dark background for modal
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
   modalContent: {
     padding: 20,
   },
@@ -226,10 +236,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#FFFFFF',
   },
   modalText: {
     fontSize: 16,
     lineHeight: 24,
+    color: '#FFFFFF',
   },
 });
 
