@@ -24,15 +24,7 @@ export default function TabLayout() {
           fontFamily: 'mon-sb',
         },
       }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({ size, color }) => <Ionicons name="search" size={size} color={color} />,
-          headerShown: false, // Ensure header is shown
-
-        }}
-      />
+      
       <Tabs.Screen
         name="camera"
         options={{
@@ -46,6 +38,15 @@ export default function TabLayout() {
               </View>
             </View>
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          tabBarLabel: 'Explore',
+          tabBarIcon: ({ size, color }) => <Ionicons name="search" size={size} color={color} />,
+          headerShown: false, // Ensure header is shown
+
         }}
       />
       <Tabs.Screen

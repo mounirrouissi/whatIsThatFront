@@ -13,6 +13,7 @@ export default function Layout() {
           options={{
             drawerLabel: 'Home',
             title: 'Welcome',
+            drawerIcon: ({size, color}) => { return <Ionicons name='home-outline' size={size} color={color}/> }
           }}
         />
         <Drawer.Screen

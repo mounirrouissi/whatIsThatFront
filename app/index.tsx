@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const Page = () => {
   return (
     <SafeAreaView style={styles.container}>
-     <Checkout/>
      
     </SafeAreaView>
   );
