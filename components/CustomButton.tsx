@@ -1,3 +1,4 @@
+import Colors from '@/constants/Colors';
 import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, TouchableOpacityProps, TextStyle, ViewStyle, StyleSheet } from "react-native";
 
@@ -47,7 +48,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#secondary',
+    backgroundColor: Colors.secondary,
     borderRadius: 12,
     minHeight: 62,
     flexDirection: 'row',
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    color: '#primary',
+    color: Colors.lime,
     fontWeight: '600',
     fontSize: 18,
   },

@@ -1,23 +1,29 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { router, Slot, Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import React from 'react';
-import { ClerkLoaded, ClerkProvider } from '@clerk/clerk-expo';
+import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { Drawer } from 'expo-router/drawer';
+import * as SecureStore from 'expo-secure-store';
 
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import ImagePickerComponent from './(tabs)/camera';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ImagePickerComponent from './(app)/home/camera';
 import { Ionicons } from '@expo/vector-icons';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SupabaseProvider } from '@/context/SupabaseContext';
+import Colors from '@/constants/Colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string
 
 if (!publishableKey) {
   throw new Error(
@@ -29,6 +35,8 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
+
+
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
@@ -36,6 +44,23 @@ export const unstable_settings = {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+const tokenCache = {
+  async getToken(key: string) {
+    try {
+      return SecureStore.getItemAsync(key);
+    } catch (err) {
+      return null;
+    }
+  },
+  async saveToken(key: string, value: string) {
+    try {
+      return SecureStore.setItemAsync(key, value);
+    } catch (err) {
+      return;
+    }
+  },
+};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -60,10 +85,16 @@ export default function RootLayout() {
 
   return( 
     
-    <ClerkProvider publishableKey={publishableKey}>
-  <RootLayoutNav />
-</ClerkProvider>
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
 
+          <SupabaseProvider>
+        
+    <GestureHandlerRootView style={{ flex: 1 }}>
+            <RootLayoutNav />
+    </GestureHandlerRootView>
+        
+          </SupabaseProvider>
+      </ClerkProvider>
   )
 }
 
@@ -71,80 +102,39 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const Drawer = createDrawerNavigator();
   const Tabs = createBottomTabNavigator();
+  const Stack = createNativeStackNavigator();
 
-  function TabsNavigator() {
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
+  const segments = useSegments();
+  const hasCompletedOnboarding =  AsyncStorage.getItem('onboardingStatus');
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    if (!hasCompletedOnboarding) {
+      router.replace('/onboarding');
+    } else if (!isSignedIn ) {
+      router.replace('/(auth)/auth');
+    } else if (segments[0] !== '(app)') {
+      router.replace('/home');
+     }
+  }, []);
+  if (!isLoaded) {
     return (
-      <Tabs.Navigator
-        screenOptions={({ route }) => ({
-          tabBarStyle: {
-            height: 60,
-            paddingBottom: 5,
-            paddingTop: 5,
-            backgroundColor: colorScheme === 'dark' ? '#1c1c1e' : '#ffffff',
-            borderTopWidth: 0,
-            elevation: 0,
-          },
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: colorScheme === 'dark' ? '#8e8e93' : '#3c3c43',
-          tabBarShowLabel: false,
-        })}
-      >
-        <Tabs.Screen
-          name="home"
-          component={require('./(tabs)/index').default}
-          options={{
-            headerShown: false,
-            tabBarIcon: ({ color, size, focused }) => (
-              <FontAwesome name="home" size={size} color={focused ? '#007AFF' : color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="camera"
-          component={ImagePickerComponent}
-          options={{
-            headerShown: false,
-            tabBarButton: (props) => (
-              <TouchableOpacity
-                {...props}
-                style={styles.cameraButton}
-                onPress={props.onPress}
-              >
-                <View style={styles.cameraIconContainer}>
-                  <FontAwesome name="camera" size={25} color="#ffffff" />
-                </View>
-              </TouchableOpacity>
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          component={require('./(drawer)/myObservs').default}
-          options={{
-            headerShown: false,
-            tabBarIcon: ({ color, size, focused }) => (
-              <FontAwesome name="amazon" size={size} color={focused ? '#007AFF' : color} />
-            ),
-          }}
-        />
-      </Tabs.Navigator>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
     );
   }
 
+
+
+
+  
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Drawer.Navigator>
-        <Drawer.Screen
-          name="index"
-          component={TabsNavigator}
-          options={{
-            drawerLabel: 'Home',
-            title: 'Welcome',
-            drawerIcon: ({size, color}) => <Ionicons name='home-outline' size={size} color={color}/>
-          }}
-        />
-        {/* Add more drawer items as needed */}
-      </Drawer.Navigator>
+    <ThemeProvider value={colorScheme === 'light' ? DefaultTheme : DefaultTheme}>
+      <Slot/>
     </ThemeProvider>
   );
 }

@@ -25,6 +25,16 @@ export default function TabLayout() {
         },
       }}>
       
+      
+      <Tabs.Screen
+        name="index"
+        options={{
+          tabBarLabel: 'Explore',
+          tabBarIcon: ({ size, color }) => <Ionicons name="search" size={size} color={color} />,
+          headerShown: false, // Ensure header is shown
+
+        }}
+      />
       <Tabs.Screen
         name="camera"
         options={{
@@ -41,21 +51,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="enclypodia"
         options={{
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({ size, color }) => <Ionicons name="search" size={size} color={color} />,
-          headerShown: false, // Ensure header is shown
-
-        }}
-      />
-      <Tabs.Screen
-        name="myObservs"
-        options={{
-          tabBarLabel: 'myObservs',
+          tabBarLabel: 'enclypodia',
           headerShown: false,
           tabBarIcon: ({ size, color }) => (
-            <Ionicons name="person-circle-outline" size={size} color={color} />
+            <Ionicons name="airplane" size={size} color={color} />
           ),
           
 

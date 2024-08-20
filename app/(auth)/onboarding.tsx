@@ -1,14 +1,17 @@
 import { StatusBar } from "expo-status-bar";
-import { Redirect, router } from "expo-router";
+import { Redirect, router, useNavigation } from "expo-router";
 import { View, Text, Image, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import  CustomButton from "../../components/CustomButton";
 import { images } from "../../constants";
 // import { useGlobalContext } from "../context/GlobalProvider";
 import React from "react";
+import Colors from "@/constants/Colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const onboarding = () => {
 //   const { loading, isLogged } = useGlobalContext();
+const navigation = useNavigation();
 
 //   if (!loading && isLogged) return <Redirect href="/home" />;
 
@@ -52,9 +55,13 @@ const onboarding = () => {
           </Text>
 
           <CustomButton
-            title="Continue with Email"
-            handlePress={() => router.push("/sign-in")}
+            title="Continue to Sign In"
             containerStyles={styles.button}
+            
+            handlePress={async () => {
+             await AsyncStorage.setItem('onboardingStatus', 'true').then(() => {
+              router.replace('/(auth)/auth');       })  
+               }}
           />
         </View>
       </ScrollView>
@@ -70,7 +77,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#161622',
   },
   scrollViewContent: {
-    height: '100%',
+    flexGrow: 1,
   },
   contentContainer: {
     width: '100%',
@@ -78,6 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   logo: {
     width: 130,
@@ -99,7 +107,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   highlightedText: {
-    color: '#secondary-200',
+    color: Colors.primary,
   },
   path: {
     width: 136,
@@ -116,6 +124,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   button: {
+    color:Colors.secondary,
     width: '100%',
     marginTop: 28,
   },
