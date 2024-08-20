@@ -12,34 +12,14 @@ import { client as supabase } from '@/utils/supabaseClient';
 
 import { SignedOut, useAuth, useClerk } from '@clerk/clerk-expo'; // If you're using Clerk for authentication
 import { useSupabase } from '@/context/SupabaseContext';
+import BackButton from '@/components/BackButton';
+import { useNavigation } from 'expo-router';
 
 
 const placeholderImage = require('@/assets/images/favicon.png');
 // Dummy data to mimic backend response
 
-const dummyIdentifications = [
-  {
-    "identif": "Sunflower",
-    "identif success": "85%",
-    "facts": [
-      "Sunflowers are known for their large, bright yellow flower heads.",
-      "They are native to North America and are cultivated for their seeds, oil, and ornamental value.",
-      "Sunflowers can grow up to 10 feet tall and track the sun's movement throughout the day (heliotropism)."
-    ],
-    "imageUrl": "https://cdn2.thecatapi.com/images/0XYvRd7oD.jpg" 
-  },
-  {
-    "identif": "Red Fox",
-    "identif success": "60%",
-    "facts": [
-      "Red foxes are highly adaptable and found in a variety of habitats.",
-      "They are known for their distinctive reddish-brown fur and bushy tail.",
-      "Red foxes are primarily nocturnal and have a diverse diet, including rodents, birds, and fruits."
-    ],
-    "imageUrl": "https://cdn2.thecatapi.com/images/0XYvRd7oD.jpg"
-  },
-  // Add more dummy identifications as needed
-];
+
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState(null);
@@ -53,6 +33,7 @@ export default function App() {
   const { userId, isLoaded, sessionId } = useAuth();
   const { client } = useClerk();
   const {getUserById ,insertUser , createIdentification} = useSupabase()
+  const navigation = useNavigation(); // Get the navigation object
 
 
 
@@ -196,6 +177,7 @@ export default function App() {
   return (
       <View style={styles.container}>
                   {isLoading && <Text style={styles.loadingText}>Loading...</Text>}
+                  <BackButton onBackPress={()=>{navigation.goBack();}}  />
 
         {image ? (
           <View style={styles.resultContainer}>

@@ -1,10 +1,11 @@
 import Colors from '@/constants/Colors';
 import { defaultStyles } from '@/constants/Styles';
+import { useWarmUpBrowser } from '@/hooks/useWarmUpBrowser';
 import { AuthStrategy } from '@/types/enums';
-import { useOAuth, useSignIn, useSignUp } from '@clerk/clerk-expo';
+import { useAuth, useOAuth, useSignIn, useSignUp } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,16 +13,87 @@ const BottomLoginSheet = () => {
   const { bottom } = useSafeAreaInsets();
   const { signUp, setActive } = useSignUp();
   const { signIn } = useSignIn();
-  
+  const { userId } = useAuth();
+  console.log("userId:", userId);
+
   const { startOAuthFlow: googleAuth } = useOAuth({ strategy: 'oauth_google' });
   const { startOAuthFlow: facebookAuth } = useOAuth({ strategy: 'oauth_facebook' });
   const router = useRouter();
+  useWarmUpBrowser()
 
-  const onSelectAuth = async (strategy: 'oauth_google' | 'oauth_facebook') => {
-    router.replace("/home")
-    // ... (rest of the onSelectAuth function remains unchanged)
+  useEffect(() => {
+    if (userId) {
+      router.replace('/(app)/home');
+    }
+  }, [userId, router]);
+  const onSelectAuth = async (strategy: AuthStrategy) => {
+    if (!signIn || !signUp) return null;
+
+    const selectedAuth = {
+      "oauth_google": googleAuth,
+      "oauth_facebook": facebookAuth,
+    }[strategy as "oauth_google" | "oauth_facebook"];
+
+    if (!selectedAuth) return null;
+
+    // https://clerk.com/docs/custom-flows/oauth-connections#o-auth-account-transfer-flows
+    // If the user has an account in your application, but does not yet
+    // have an OAuth account connected to it, you can transfer the OAuth
+    // account to the existing user account.
+    const userExistsButNeedsToSignIn =
+      signUp.verifications.externalAccount.status === 'transferable' &&
+      signUp.verifications.externalAccount.error?.code === 'external_account_exists';
+console.log("userExistsButNeedsToSignIn", userExistsButNeedsToSignIn)
+    if (userExistsButNeedsToSignIn) {
+      const res = await signIn.create({ transfer: true });
+
+      if (res.status === 'complete') {
+        setActive({
+          session: res.createdSessionId,
+        });
+         router.replace('/(app)/home');
+
+
+      }
+    }
+    
+    const userNeedsToBeCreated = signIn.firstFactorVerification.status === 'transferable';
+
+    if (userNeedsToBeCreated) {
+      const res = await signUp.create({
+        transfer: true,
+      });
+
+      if (res.status === 'complete') {
+        setActive({
+          session: res.createdSessionId,
+        });
+        router.replace('/(app)/home');
+
+
+      }
+    } else {
+      // If the user has an account in your application
+      // and has an OAuth account connected to it, you can sign them in.
+      try {
+        console.log('Starting OAuth flow...');
+        const { createdSessionId, signIn, signUp, setActive } = await selectedAuth();
+        console.log('OAuth flow complete!');
+        console.log('createdSessionId:', createdSessionId);
+        console.log('signIn:', signIn);
+        console.log('signUp:', signUp);
+                console.log('OAuth success');
+        console.log("Created session id:", createdSessionId);
+        if (createdSessionId) {
+          setActive!({ session: createdSessionId });
+          router.replace('/(app)/home');
+          console.log('OAuth success standard');
+        }
+      } catch (err) {
+        console.error('OAuth error', err);
+      }
+    }
   };
-
   const handleSignUp = () => {
     router.push({
       pathname: '/login',
@@ -68,7 +140,6 @@ const BottomLoginSheet = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',

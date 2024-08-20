@@ -19,6 +19,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        
         tabBarActiveTintColor: Colors.primary,
         tabBarLabelStyle: {
           fontFamily: 'mon-sb',
@@ -41,6 +42,9 @@ export default function TabLayout() {
           tabBarLabel: 'IdentifyyThatThing',
           tabBarLabelStyle: { fontFamily: 'Roboto', fontSize: 14 },
           headerShown: false,
+          tabBarStyle: { display: 'none' },
+          
+          
           tabBarIcon: ({ size, color }) => (
             <View style={{ position: 'absolute', top: -20, alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ backgroundColor: "green", borderRadius: 30, padding: 10 }}>

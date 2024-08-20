@@ -1,10 +1,11 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { router, Slot, Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import LinkingConfiguration from './LinkingConfiguration';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import React from 'react';
@@ -17,7 +18,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ImagePickerComponent from './(app)/home/camera';
 import { Ionicons } from '@expo/vector-icons';
-import { View, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View,Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SupabaseProvider } from '@/context/SupabaseContext';
 import Colors from '@/constants/Colors';
@@ -37,10 +38,10 @@ export {
 
 
 
-export const unstable_settings = {
+/* export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
-};
+}; */
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -68,11 +69,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
@@ -83,43 +79,47 @@ export default function RootLayout() {
     return null;
   }
 
-  return( 
+  return (
     
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-
-          <SupabaseProvider>
-        
-    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <SupabaseProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
             <RootLayoutNav />
-    </GestureHandlerRootView>
-        
-          </SupabaseProvider>
+          </GestureHandlerRootView>
+        </SupabaseProvider>
       </ClerkProvider>
-  )
+  );
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const Drawer = createDrawerNavigator();
-  const Tabs = createBottomTabNavigator();
-  const Stack = createNativeStackNavigator();
-
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
-  const hasCompletedOnboarding =  AsyncStorage.getItem('onboardingStatus');
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = React.useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
+
+  
+
   useEffect(() => {
-    if (!isLoaded) return;
-    
+    async function checkOnboarding() {
+      const status = await AsyncStorage.getItem('onboardingStatus');
+      setHasCompletedOnboarding(status === 'completed');
+      setHasCheckedOnboarding(true);
+    }
+    checkOnboarding();
+    if (!isLoaded || !hasCheckedOnboarding) return;
+
     if (!hasCompletedOnboarding) {
       router.replace('/onboarding');
-    } else if (!isSignedIn ) {
+    } else if (!isSignedIn) {
       router.replace('/(auth)/auth');
     } else if (segments[0] !== '(app)') {
       router.replace('/home');
-     }
-  }, []);
-  if (!isLoaded) {
+    }
+  }, [isLoaded]);
+
+  if (!isLoaded || !hasCheckedOnboarding) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -127,14 +127,10 @@ function RootLayoutNav() {
     );
   }
 
-
-
-
-  
-
   return (
     <ThemeProvider value={colorScheme === 'light' ? DefaultTheme : DefaultTheme}>
-      <Slot/>
+      
+      <Slot />
     </ThemeProvider>
   );
 }

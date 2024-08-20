@@ -76,7 +76,7 @@ export const SupabaseProvider = ({ children }: any) => {
     const { data } = await client
       .from(IDENTIFICATIONS_TABLE)
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', "a9fb0b32-1298-4edb-8530-04e7ab2da7f3");
 
     return data || [];
   };

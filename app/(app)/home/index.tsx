@@ -23,7 +23,7 @@ export default function TabOneScreen() {
   const handleLogout = async () => {
     try {
       await signOut();
-                    router.push('/(auth)/layout');
+                    router.push('/(auth)/auth');
 
       console.log("User logged out");
     } catch (error) {
@@ -62,11 +62,11 @@ export default function TabOneScreen() {
       }
     } */
   };
-
+//TODO use transition and a gallery of images 
   const renderItem = ({ item }: { item: Identification }) => (
     <View style={styles.item}>
       <Image 
-        source={{ uri: item.original_image_url || 'https://via.placeholder.com/50' }} 
+        source={{ uri: item.image_url || 'https://via.placeholder.com/10' }} 
         style={styles.itemImage}
       />
       <View style={styles.itemContent}>

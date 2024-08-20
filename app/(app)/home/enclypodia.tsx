@@ -1,73 +1,53 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, Text, ScrollView, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
 import { client as supabase } from '@/utils/supabaseClient';
+import { useSupabase } from '@/context/SupabaseContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { IdentificationDB } from '../../types';
 import IdentificationDetails from '@/components/IdentificationDetails';
 
 export const MyObservs = () => {
-  // ... (keep existing state and useEffect)
   const categories = ['animal', 'bird', 'plant'];
   const [data, setData] = useState<{ [key: string]: IdentificationDB[] }>({});
   const [loading, setLoading] = useState(true);
-  const { userId } = useAuth()
-
+  const { userId } = useAuth();
+  const [selectedIdentification, setSelectedIdentification] = useState<IdentificationDB | null>(null);
 
   useEffect(() => {
-        const fetchData = async () => {
-          console.log('Starting to fetch data...');
-          try {
-            let fetchedData: { [key: string]: any[] } = {};
-            for (let category of categories) {
-              console.log(`Fetching data for category: ${category}`);
-              const { data: identifications, error } = await supabase
-                .from('identifications')
-                .select('*')
-                .eq('type', category)
-                .eq('user_id', userId)
-                .order('identified_at', { ascending: false });
-              console.log("data: " + JSON.stringify(identifications));
-              if (error) {
-                console.error(`Error fetching data for category ${category}:`, error);
-                throw error;
-              }
-              fetchedData[category] = identifications || [];
-            }
-            console.log('Data fetching completed.');
-            setData(fetchedData);
-          } catch (error) {
-            console.error('Error fetching data from Supabase:', error);
-          } finally {
-            setLoading(false);
-            console.log('Loading state set to false.');
-          }
-        };
-        fetchData();
-      }, [userId]);
-  
-    
-    
-      
-      
-      
-      
-      
-    
-    
-      
-      
-    
-    
-  
-  
-  
+    const fetchData = async () => {
+      console.log('Starting to fetch data...');
+      try {
+        let fetchedData: { [key: string]: any[] } = {};
+        for (let category of categories) {
+          console.log(`Fetching data for category: ${category}`);
 
-  
+          const { data: identifications, error } = await supabase
+            .from('identifications')
+            .select('*')
+            .eq('type', category)
+            .eq('user_id', userId)
+            .order('identified_at', { ascending: false });
 
-  
-  
+          console.log("data: " + JSON.stringify(identifications));
+          if (error) {
+            console.error(`Error fetching data for category ${category}:`, error);
+            throw error;
+          }
 
-  const [selectedIdentification, setSelectedIdentification] = useState<IdentificationDB | null>(null);
+          fetchedData[category] = identifications || [];
+        }
+        console.log('Data fetching completed.');
+        setData(fetchedData);
+      } catch (error) {
+        console.error('Error fetching data from Supabase:', error);
+      } finally {
+        setLoading(false);
+        console.log('Loading state set to false.');
+      }
+    };
+
+    fetchData();
+  }, [userId]);
 
   const renderCategory = (category: string) => {
     const items = data[category] || [];
@@ -81,7 +61,7 @@ export const MyObservs = () => {
             <TouchableOpacity onPress={() => setSelectedIdentification(item)}>
               <View style={styles.itemContainer}>
                 <Image 
-                  source={{ uri: item.imageUrl.startsWith('data:') ? item.imageUrl : `data:image/jpeg;base64,${item.imageUrl}` }} 
+                  source={{ uri: item.imageUrl}} 
                   style={styles.image} 
                 />
                 <Text style={styles.itemText}>{item.speciesId || 'Unknown'}</Text>
@@ -112,6 +92,7 @@ export const MyObservs = () => {
   );
 };
 
+  
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -157,4 +138,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
 export default MyObservs;

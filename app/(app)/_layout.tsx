@@ -9,7 +9,7 @@ export default function AppLayout() {
         name="home"
         options={{
           drawerLabel: "Home",
-          title: "Home"
+          title: ""
         }}
       />
       <Drawer.Screen
