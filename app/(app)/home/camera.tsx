@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Camera, CameraType, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,36 +9,28 @@ import { uploadImageToR2, identifyImage } from '../../services/uploadService';
 import { Identification, IdentificationResponse } from '../../types';
 import { FlatList } from 'react-native-gesture-handler';
 import { client as supabase } from '@/utils/supabaseClient';
-
-import { SignedOut, useAuth, useClerk } from '@clerk/clerk-expo'; // If you're using Clerk for authentication
 import { useSupabase } from '@/context/SupabaseContext';
 import BackButton from '@/components/BackButton';
 import { useNavigation } from 'expo-router';
-
+import { useAuth } from '@clerk/clerk-expo';
 
 const placeholderImage = require('@/assets/images/favicon.png');
-// Dummy data to mimic backend response
 
-
-
-export default function App() {
+function camera() {
   const [hasPermission, setHasPermission] = useState(null);
   const [image, setImage] = useState(null);
-  const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [identifications, setIdentifications] = useState<IdentificationResponse>(null);
   const [selectedCategory, setSelectedCategory] = useState('plant');
   const cameraRef = useRef(null);
   const [facing, setFacing] = useState<CameraType>('back');
   const { userId, isLoaded, sessionId } = useAuth();
-  const { client } = useClerk();
-  const {getUserById ,insertUser , createIdentification} = useSupabase()
-  const navigation = useNavigation(); // Get the navigation object
-
-
+  const { getUserById, insertUser, createIdentification } = useSupabase();
+  const navigation = useNavigation();
+  const [swipedCount, setSwipedCount] = useState(0);
 
   const categories = [
-    { label: 'Anything', emoji: '🌎', value: 'anything' }, // Default
+    { label: 'Anything', emoji: '🌎', value: 'anything' },
     { label: 'Plants', emoji: '🌱', value: 'plant' },
     { label: 'Animals', emoji: '🐾', value: 'animal' },
     { label: 'Bugs', emoji: '🐛', value: 'bug' },
@@ -46,10 +38,6 @@ export default function App() {
     { label: 'Rocks', emoji: '🪨', value: 'rock' },
   ];
 
-
-   
-  
-  
   useEffect(() => {
     (async () => {
       const cameraStatus = await Camera.requestCameraPermissionsAsync();
@@ -58,114 +46,111 @@ export default function App() {
     })();
   }, []);
 
-  const takePicture = async () => {
+  const takePicture = useCallback(async () => {
     if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync();
-      setImage(photo.uri);
-      await handleUploadAndIdentify(photo.uri);
+      try {
+        const photo = await cameraRef.current.takePictureAsync();
+        setImage(photo.uri);
+        await handleUploadAndIdentify(photo.uri);
+      } catch (error) {
+        console.error('Error taking picture:', error);
+        Alert.alert('Error', 'An error occurred while taking the picture. Please try again.');
+      }
     }
-  };
+  }, [handleUploadAndIdentify]);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const pickImage = useCallback(async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const uri = result.assets[0].uri;
-      setImage(uri);
-      await handleUploadAndIdentify(uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setImage(uri);
+        await handleUploadAndIdentify(uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'An error occurred while picking the image. Please try again.');
     }
-  };
+  }, [handleUploadAndIdentify]);
 
-  const handleUploadAndIdentify = async (uri) => {
+  const handleUploadAndIdentify = useCallback(async (uri) => {
     setIsLoading(true);
     try {
       const imageUrl = await uploadImageToR2(uri);
       const identifications = await identifyImage(imageUrl, selectedCategory);
-    //  const identifications = dummyIdentifications
- //getting user 
- let user;
- try {
-   user = await getUserById(userId);
- } catch (error) {
-   console.error('Error checking user:', error);
-   throw error;
- }
- 
- //  console.log("user id = ", userData)
 
-         
- if (!user) {
-   await insertUser(userId as string, "test@gmail.com")
- }
+      let user;
+      try {
+        user = await getUserById(userId);
+      } catch (error) {
+        console.error('Error checking user:', error);
+        throw error;
+      }
+
+      if (!user) {
+        await insertUser(userId as string, 'test@gmail.com');
+      }
+
       if (Array.isArray(identifications)) {
         const updatedIdentifications: IdentificationResponse = identifications.map((item, index) => {
-          console.log('Image URL before applying:', item.imageUrl);
           return {
             ...item,
-            imageUrl: item.imageUrl || imageUrl, // Use item-specific URL if available, or fallback to the uploaded image URL
+            imageUrl: item.imageUrl || imageUrl,
           };
         });
 
-        console.log("updatedIdentifications", updatedIdentifications)
-
         for (let i = 0; i < updatedIdentifications.length; i++) {
           const identification = updatedIdentifications[i];
-          console.log("identification", identification)
-          console.log('idenitf number ', i)
-    
-         // Insert identification first
-       //   const { data: identificationData, error: identificationError } =
-          
-          let identificationData;
-          try{
-            identificationData = await createIdentification(userId as string, identification.imageUrl, null, selectedCategory, i + 1, imageUrl)
-          }
-          catch (error) {
-            console.error('Error inserting identification:', error);
-            throw error;
-          }
-          console.log("identificationData", identificationData)
-
-
-
-      
-        
-
+          const identificationData = await createIdentification(
+            userId as string,
+            identification.imageUrl,
+            null,
+            selectedCategory,
+            i + 1,
+            imageUrl
+          );
           const identificationId = identificationData[0].id;
-
-          console.log("identificationId", identificationId)
 
           for (let j = 0; j < identification.facts.length; j++) {
             const fact = identification.facts[j];
-            const { error: factError } = await supabase
-              .from('facts')
-              .insert({
-                identification_id: identificationId,
-                fact: fact,
-                fact_number: j + 1
-              });
+            const { error: factError } = await supabase.from('facts').insert({
+              identification_id: identificationId,
+              fact: fact,
+              fact_number: j + 1,
+            });
 
             if (factError) throw factError;
           }
         }
 
         setIdentifications(updatedIdentifications);
-        setDescription(updatedIdentifications[0].identif);
       } else {
-        setDescription('Failed to identify image. Please try again.');
+        setImage(null);
       }
     } catch (error) {
-      setDescription('Failed to identify image. Please try again.');
+      setImage(null);
+      console.error('Error handling upload and identification:', error);
     } finally {
       setIsLoading(false);
     }
-  };
-  
+  }, [userId, selectedCategory, getUserById, insertUser, createIdentification]);
+
+  const handleSwiped = useCallback((cardIndex) => {
+    setSwipedCount(prevCount => prevCount + 1);
+    if (swipedCount === 2) {
+      navigation.replace('/(app)/home');
+    }
+  }, [swipedCount, navigation]);
+
+  const toggleCameraFacing = useCallback(() => {
+    setFacing(prevFacing => prevFacing === 'back' ? 'front' : 'back');
+  }, []);
 
   if (hasPermission === null) {
     return <View />;
@@ -175,91 +160,101 @@ export default function App() {
   }
 
   return (
-      <View style={styles.container}>
-                  {isLoading && <Text style={styles.loadingText}>Loading...</Text>}
-                  <BackButton onBackPress={()=>{navigation.goBack();}}  />
+    <View style={styles.container}>
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Identifying image...</Text>
+        </View>
+      )}
+      <BackButton onBackPress={() => navigation.goBack()} />
 
-        {image ? (
-          <View style={styles.resultContainer}>
-            <Image source={{ uri: image }} style={styles.imagePreview} />
-            {description ? <Text style={styles.description}>Description: {description}</Text> : null}
-            {identifications && identifications.length > 0 && (
-              <Swiper
-                cards={identifications}
-                renderCard={(card) => (
-                  <View style={styles.card}>
-                    <Image 
-                      source={{ uri: card.imageUrl }} 
-                      style={styles.cardImage} 
-                      defaultSource={placeholderImage}
-                    />
-                    <View style={styles.textContainer}>
-                      <Text style={styles.cardTitle}>{card.identif}</Text>
-                      <View style={styles.rateContainer}>
-                        <Text style={styles.cardRate}>{card["identif success"]}</Text>
-                      </View>
-                      {card.facts.map((fact, index) => (
-                        <Text key={index} style={styles.cardDescription}>{fact}</Text>
-                      ))}
+      {image ? (
+        <View style={styles.resultContainer}>
+          <Image source={{ uri: image }} style={styles.imagePreview} />
+          {identifications && identifications.length > 0 && (
+            <Swiper
+              cards={identifications}
+              renderCard={(card) => (
+                <View style={styles.card}>
+                  <Image source={{ uri: card.imageUrl }} style={styles.cardImage} defaultSource={placeholderImage} />
+                  <View style={styles.textContainer}>
+                    <Text style={styles.cardTitle}>{card.identif}</Text>
+                    <View style={styles.rateContainer}>
+                      <Text style={styles.cardRate}>{card['identif success']}</Text>
                     </View>
+                    {card.facts.map((fact, index) => (
+                      <View key={index} style={styles.factContainer}>
+                        <Ionicons name="checkmark-circle" size={18} color="#4FD0E9" />
+                        <Text style={styles.cardDescription}>{fact}</Text>
+                      </View>
+                    ))}
                   </View>
-                )}
-                onSwiped={(cardIndex) => {
-                  console.log(cardIndex + ' swiped');
-                }}
-                onSwipedAll={() => { console.log('All cards swiped'); }}
-                cardIndex={0}
-                backgroundColor={'transparent'}
-                stackSize={3}
-                infinite
-                animateCardOpacity
-                swipeBackCard
-              />
-            )}
-            <TouchableOpacity style={styles.backButton} onPress={() => setImage(null)}>
-              <Text style={styles.backButtonText}>Take Another Picture</Text>
+                </View>
+              )}
+              onSwiped={handleSwiped}
+              onSwipedAll={() => {
+                navigation.replace('/(app)/home');
+              }}
+              cardIndex={0}
+              backgroundColor={'transparent'}
+              stackSize={3}
+              infinite
+              animateCardOpacity
+              swipeBackCard
+            />
+          )}
+          <TouchableOpacity style={styles.backButton} onPress={() => setImage(null)}>
+            <Text style={styles.backButtonText}>Take Another Picture</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
+          <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.gradient}>
+            <FlatList
+              data={categories}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.categoryButton,
+                    selectedCategory === item.value && styles.selectedCategory,
+                  ]}
+                  onPress={() => setSelectedCategory(item.value)}
+                >
+                  <Text style={styles.categoryEmoji}>{item.emoji}</Text>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.value}
+              horizontal
+              contentContainerStyle={styles.categoryContainer}
+            />
+          </LinearGradient>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.circleButton} onPress={pickImage}>
+              <Ionicons name="images" size={28} color="white" />
             </TouchableOpacity>
-            
+            <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+              <View style={styles.captureInner} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.circleButton} onPress={toggleCameraFacing}>
+              <Ionicons name="camera-reverse-sharp" size={28} color="white" />
+            </TouchableOpacity>
           </View>
-        ) : (
-          <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
-            <LinearGradient
-          colors={['rgba(0,0,0,0.8)', 'transparent']}
-          style={styles.gradient}
-        >
-          
-          <FlatList
-            data={categories}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.categoryButton,
-                  selectedCategory === item.value && styles.selectedCategory,
-                ]}
-                onPress={() => setSelectedCategory(item.value)}
-              >
-                <Text style={styles.categoryEmoji}>{item.emoji}</Text>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.value}
-            horizontal
-            contentContainerStyle={styles.categoryContainer}
-          />
-        </LinearGradient>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.circleButton} onPress={pickImage}>
-                <Ionicons name="images" size={28} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-                <View style={styles.captureInner} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton} onPress={() => setFacing(facing === 'back' ? 'front' : 'back')}>
-                <Ionicons name="camera-reverse-sharp" size={28} color="white" />
-              </TouchableOpacity>
-            </View>
-          </CameraView>
-        )}
-      </View>
+        </CameraView>
+      )}
+
+
+{!image && (
+        <View style={styles.instructionsContainer}>
+          <Text style={styles.instructionsText}>
+            To identify an object, either take a picture or select an image from your gallery.
+          </Text>
+          <Text style={styles.instructionsText}>
+            For best results, make sure the object is in focus and well-lit.
+          </Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -431,4 +426,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-});
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 18,
+    marginTop: 16,
+  },
+  factContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  cardDescription: {
+    fontSize: 16,
+    color: '#666',
+    marginLeft: 8,
+  },
+  instructionsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 20,
+  },
+  instructionsText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+  });
+  export default camera;
+ 
+ 
+ 
+ 
