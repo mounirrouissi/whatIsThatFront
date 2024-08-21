@@ -4,7 +4,6 @@ import { Camera, CameraType, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Swiper from 'react-native-deck-swiper';
 import { uploadImageToR2, identifyImage } from '../../services/uploadService';
 import { Identification, IdentificationResponse } from '../../types';
 import { FlatList } from 'react-native-gesture-handler';
@@ -13,6 +12,7 @@ import { useSupabase } from '@/context/SupabaseContext';
 import BackButton from '@/components/BackButton';
 import { useNavigation } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
+import Swiper from 'react-native-deck-swiper';
 
 const placeholderImage = require('@/assets/images/favicon.png');
 
@@ -25,9 +25,9 @@ function camera() {
   const cameraRef = useRef(null);
   const [facing, setFacing] = useState<CameraType>('back');
   const { userId, isLoaded, sessionId } = useAuth();
+  const [swipedCount, setSwipedCount] = useState(0);
   const { getUserById, insertUser, createIdentification } = useSupabase();
   const navigation = useNavigation();
-  const [swipedCount, setSwipedCount] = useState(0);
 
   const categories = [
     { label: 'Anything', emoji: '🌎', value: 'anything' },
@@ -78,6 +78,17 @@ function camera() {
       Alert.alert('Error', 'An error occurred while picking the image. Please try again.');
     }
   }, [handleUploadAndIdentify]);
+
+  const handleSwiped = useCallback((cardIndex) => {
+    setSwipedCount(prevCount => prevCount + 1);
+    if (swipedCount === 2) {
+      navigation.replace('/(app)/home');
+    }
+  }, [swipedCount, navigation]);
+
+
+
+
 
   const handleUploadAndIdentify = useCallback(async (uri) => {
     setIsLoading(true);
@@ -141,13 +152,6 @@ function camera() {
     }
   }, [userId, selectedCategory, getUserById, insertUser, createIdentification]);
 
-  const handleSwiped = useCallback((cardIndex) => {
-    setSwipedCount(prevCount => prevCount + 1);
-    if (swipedCount === 2) {
-      navigation.replace('/(app)/home');
-    }
-  }, [swipedCount, navigation]);
-
   const toggleCameraFacing = useCallback(() => {
     setFacing(prevFacing => prevFacing === 'back' ? 'front' : 'back');
   }, []);
@@ -210,7 +214,7 @@ function camera() {
         </View>
       ) : (
         <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
-          <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent']} style={styles.gradient}>
+          <View style={styles.categoryContainer}>
             <FlatList
               data={categories}
               renderItem={({ item }) => (
@@ -228,7 +232,7 @@ function camera() {
               horizontal
               contentContainerStyle={styles.categoryContainer}
             />
-          </LinearGradient>
+          </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.circleButton} onPress={pickImage}>
               <Ionicons name="images" size={28} color="white" />
@@ -243,8 +247,7 @@ function camera() {
         </CameraView>
       )}
 
-
-{!image && (
+      {!image && (
         <View style={styles.instructionsContainer}>
           <Text style={styles.instructionsText}>
             To identify an object, either take a picture or select an image from your gallery.
@@ -259,14 +262,6 @@ function camera() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  camera: {
-    flex: 1,
-  },
-   // Updated Category Styles
   categoryContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -291,6 +286,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  camera: {
+    flex: 1,
   },
   buttonContainer: {
     position: 'absolute',
@@ -333,39 +336,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 50,
   },
-  gradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 200,
-    paddingTop: 50,
-    paddingHorizontal: 20,
-    zIndex: 1000,
-  },
-  categoryText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  selectedCategoryText: {
-    color: 'black',
-  },
   resultContainer: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  description: {
-    color: 'white',
-    fontSize: 16,
-    marginVertical: 10,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  loadingText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 20,
   },
   backButton: {
     position: 'absolute',
@@ -381,6 +354,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  loadingText: {
+    color: 'white',
+    fontSize: 18,
+    marginTop: 16,
+  },
+  instructionsContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    transform: [{ translateY: -50 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  instructionsText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginVertical: 10,
+  },
+
   card: {
     height: '80%',
     borderRadius: 10,
@@ -426,48 +432,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  loadingContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-  },
-  loadingText: {
-    color: 'white',
-    fontSize: 18,
-    marginTop: 16,
-  },
   factContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 4,
   },
-  cardDescription: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 8,
-  },
-  instructionsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 20,
-  },
-  instructionsText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginVertical: 10,
-  },
-  });
-  export default camera;
- 
- 
- 
- 
+
+});
+
+export default camera;
