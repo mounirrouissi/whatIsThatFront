@@ -51,16 +51,6 @@ export default function TabOneScreen() {
     console.log("data: "+ JSON.stringify(data)); 
   }
 
-
-    
-    /* if (userId && getIdentifications) {
-      try {
-        const data = await getIdentifications(userId);
-        setIdentifications(data);
-      } catch (error) {
-        console.error('Error fetching identifications:', error);
-      }
-    } */
   };
 //TODO use transition and a gallery of images 
   const renderItem = ({ item }: { item: Identification }) => (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Camera, CameraType, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { uploadImageToR2, identifyImage } from '../../services/uploadService';
 import { Identification, IdentificationResponse } from '../../types';
-import { FlatList } from 'react-native-gesture-handler';
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { client as supabase } from '@/utils/supabaseClient';
 import { useSupabase } from '@/context/SupabaseContext';
 import BackButton from '@/components/BackButton';
@@ -19,13 +19,16 @@ const placeholderImage = require('@/assets/images/favicon.png');
 function camera() {
   const [hasPermission, setHasPermission] = useState(null);
   const [image, setImage] = useState(null);
+  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [identifications, setIdentifications] = useState<IdentificationResponse>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [identifications, setIdentifications] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('plant');
-  const cameraRef = useRef(null);
-  const [facing, setFacing] = useState<CameraType>('back');
-  const { userId, isLoaded, sessionId } = useAuth();
+  const [facing, setFacing] = useState('back');
   const [swipedCount, setSwipedCount] = useState(0);
+
+  const cameraRef = useRef(null);
+  const { userId } = useAuth();
   const { getUserById, insertUser, createIdentification } = useSupabase();
   const navigation = useNavigation();
 
@@ -43,84 +46,35 @@ function camera() {
       const cameraStatus = await Camera.requestCameraPermissionsAsync();
       const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
       setHasPermission(cameraStatus.status === 'granted' && galleryStatus.status === 'granted');
+      setError(null)
     })();
   }, []);
 
-  const takePicture = useCallback(async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync();
-        setImage(photo.uri);
-        await handleUploadAndIdentify(photo.uri);
-      } catch (error) {
-        console.error('Error taking picture:', error);
-        Alert.alert('Error', 'An error occurred while taking the picture. Please try again.');
-      }
-    }
-  }, [handleUploadAndIdentify]);
-
-  const pickImage = useCallback(async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        setImage(uri);
-        await handleUploadAndIdentify(uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'An error occurred while picking the image. Please try again.');
-    }
-  }, [handleUploadAndIdentify]);
-
-  const handleSwiped = useCallback((cardIndex) => {
-    setSwipedCount(prevCount => prevCount + 1);
-    if (swipedCount === 2) {
-      navigation.replace('/(app)/home');
-    }
-  }, [swipedCount, navigation]);
-
-
-
-
-
   const handleUploadAndIdentify = useCallback(async (uri) => {
     setIsLoading(true);
+    setError(null);
     try {
       const imageUrl = await uploadImageToR2(uri);
+      console.log("Uploading image to R2 is done");
       const identifications = await identifyImage(imageUrl, selectedCategory);
+      console.log("identifications = ", identifications);
 
-      let user;
-      try {
-        user = await getUserById(userId);
-      } catch (error) {
-        console.error('Error checking user:', error);
-        throw error;
-      }
-
+      let user = await getUserById(userId);
       if (!user) {
-        await insertUser(userId as string, 'test@gmail.com');
+        await insertUser(userId, 'test@gmail.com');
       }
 
       if (Array.isArray(identifications)) {
-        const updatedIdentifications: IdentificationResponse = identifications.map((item, index) => {
-          return {
-            ...item,
-            imageUrl: item.imageUrl || imageUrl,
-          };
-        });
+        const updatedIdentifications = identifications.map((item, index) => ({
+          ...item,
+          imageUrl: index === 0 ? item.imageUrl : null,
+        }));
 
         for (let i = 0; i < updatedIdentifications.length; i++) {
           const identification = updatedIdentifications[i];
           const identificationData = await createIdentification(
-            userId as string,
-            identification.imageUrl,
+            userId,
+            identification.imageUrl || imageUrl,
             null,
             selectedCategory,
             i + 1,
@@ -145,23 +99,93 @@ function camera() {
         setImage(null);
       }
     } catch (error) {
-      setImage(null);
       console.error('Error handling upload and identification:', error);
+      setError('An error occurred while processing the image');
+      setImage(null);
     } finally {
       setIsLoading(false);
     }
   }, [userId, selectedCategory, getUserById, insertUser, createIdentification]);
 
+  const takePicture = useCallback(async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync();
+        setImage(photo.uri);
+        await handleUploadAndIdentify(photo.uri);
+      } catch (error) {
+        console.error('Error taking picture:', error);
+        setError('An error occurred while taking the picture');
+      }
+    }
+  }, [handleUploadAndIdentify]);
+
+  const pickImage = useCallback(async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const uri = result.assets[0].uri;
+        setImage(uri);
+        await handleUploadAndIdentify(uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      setError('An error occurred while picking the image');
+    }
+  }, [handleUploadAndIdentify]);
+
+  const handleSwiped = useCallback(() => {
+    setSwipedCount(prevCount => prevCount + 1);
+  }, []);
+
+  const handleSwipedAll = useCallback(async () => {
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsSaving(false);
+    setImage(null);
+    navigation.navigate('/(app)/home');
+  }, [navigation]);
+
   const toggleCameraFacing = useCallback(() => {
     setFacing(prevFacing => prevFacing === 'back' ? 'front' : 'back');
   }, []);
 
-  if (hasPermission === null) {
-    return <View />;
-  }
-  if (hasPermission === false) {
-    return <Text style={styles.errorText}>No access to camera or gallery</Text>;
-  }
+  const renderCard = useCallback((card, index) => (
+    <View style={styles.card}>
+      {index === 0 && card.imageUrl && (
+        <Image 
+          source={{ uri: card.imageUrl }} 
+          style={styles.cardImage} 
+          resizeMode="cover"
+          defaultSource={placeholderImage} 
+        />
+      )}
+      <View style={styles.textContainer}>
+        <Text style={styles.cardTitle}>{card.identif}</Text>
+        <View style={styles.rateContainer}>
+          <Text style={styles.cardRate}>{card['identif success']}</Text>
+        </View>
+        <ScrollView style={styles.factsScrollView}>
+          {card.facts.map((fact, factIndex) => (
+            <View key={factIndex} style={styles.factContainer}>
+              <Ionicons name="checkmark-circle" size={18} color="#4FD0E9" />
+              <Text style={styles.cardDescription}>{fact}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    </View>
+  ), []);
+
+  if (hasPermission === null) return <View />;
+  if (hasPermission === false) return <Text style={styles.errorText}>No access to camera or gallery</Text>;
+  if (error) return <Text style={styles.errorText}>{error}</Text>;
 
   return (
     <View style={styles.container}>
@@ -179,31 +203,13 @@ function camera() {
           {identifications && identifications.length > 0 && (
             <Swiper
               cards={identifications}
-              renderCard={(card) => (
-                <View style={styles.card}>
-                  <Image source={{ uri: card.imageUrl }} style={styles.cardImage} defaultSource={placeholderImage} />
-                  <View style={styles.textContainer}>
-                    <Text style={styles.cardTitle}>{card.identif}</Text>
-                    <View style={styles.rateContainer}>
-                      <Text style={styles.cardRate}>{card['identif success']}</Text>
-                    </View>
-                    {card.facts.map((fact, index) => (
-                      <View key={index} style={styles.factContainer}>
-                        <Ionicons name="checkmark-circle" size={18} color="#4FD0E9" />
-                        <Text style={styles.cardDescription}>{fact}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              )}
+              renderCard={renderCard}
               onSwiped={handleSwiped}
-              onSwipedAll={() => {
-                navigation.replace('/(app)/home');
-              }}
+              onSwipedAll={handleSwipedAll}
               cardIndex={0}
               backgroundColor={'transparent'}
               stackSize={3}
-              infinite
+              infinite={false}
               animateCardOpacity
               swipeBackCard
             />
@@ -257,6 +263,13 @@ function camera() {
           </Text>
         </View>
       )}
+
+      {isSaving && (
+        <View style={styles.savingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.savingText}>The identification is being saved...</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -270,7 +283,8 @@ const styles = StyleSheet.create({
   },
   categoryButton: {
     padding: 10,
-    borderRadius: 30, // More rounded for emojis
+
+    borderRadius: 30,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginHorizontal: 5,
   },
@@ -278,7 +292,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   categoryEmoji: {
-    fontSize: 30, // Larger font size for emojis
+
+    fontSize: 30,
   },
 
   categoryTitle: {
@@ -327,8 +342,10 @@ const styles = StyleSheet.create({
   },
   imagePreview: {
     flex: 1,
-    width: null,
-    height: null,
+
+
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
   },
   errorText: {
@@ -388,10 +405,12 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    height: '80%',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E8E8E8',
+    height: '100%',
+
+
+
+    borderRadius: 20,
+    borderWidth: 0,
     backgroundColor: 'white',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -401,43 +420,74 @@ const styles = StyleSheet.create({
   },
   cardImage: {
     width: '100%',
-    height: '50%',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    height: 200,  // Adjust as needed
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
   textContainer: {
-    padding: 20,
+    flex: 1,
+    padding: 15,
   },
+  factsScrollView: {
+    flexGrow: 1,
+  },
+  savingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  savingText: {
+    color: '#ffffff',
+    fontSize: 18,
+    marginTop: 10,
+  },
+  
+  
   cardTitle: {
-    fontSize: 24,
+
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 10,
+
+    marginBottom: 15,
     color: '#333',
   },
   cardDescription: {
-    fontSize: 16,
+
+    fontSize: 18,
     color: '#666',
-    marginBottom: 5,
+
+    marginBottom: 8,
+    marginLeft: 10,
   },
   rateContainer: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+
+
+    top: 20,
+    right: 20,
     backgroundColor: '#4FD0E9',
-    padding: 8,
-    borderRadius: 15,
+
+
+    padding: 10,
+    borderRadius: 20,
   },
   cardRate: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 16,
+
+    fontSize: 18,
   },
   factContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 4,
+
+    marginVertical: 6,
   },
 
 });
 
 export default camera;
+
+
+
