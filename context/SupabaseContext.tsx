@@ -9,6 +9,10 @@ export const IDENTIFICATIONS_TABLE = 'identifications';
 export const SPECIES_TABLE = 'species';
 export const USER_FAVORITES_TABLE = 'user_favorites';
 export const FACTS_TABLE = 'facts';
+export const ENCYCLOPEDIA_TABLE = 'encyclopedia_entries';
+const CATEGORIES_TABLE = 'categories';
+
+export const FACTS_ENTRIES_TABLE = 'encyclopedia_facts';
 
 type ProviderProps = {
   userId: string | null;
@@ -32,6 +36,9 @@ type ProviderProps = {
   deleteFact: (id: string) => Promise<any>;
   getUserById: (userId: string) => Promise<any>;
   insertUser: (userId: string, email: string) => Promise<any>;
+   // New methods
+   fetchEncyclopediaEntriesByCategory: (category: string) => Promise<any>;
+   fetchFactsByEncyclopediaEntryId: (encyclopediaEntryId: string) => Promise<any>;
 };
 
 const SupabaseContext = createContext<Partial<ProviderProps>>({});
@@ -229,6 +236,49 @@ export const SupabaseProvider = ({ children }: any) => {
     return data;
   };
 
+  const fetchEncyclopediaEntriesByCategory = async (categoryName: string) => {
+    try {
+      const { data, error } = await client
+        .from('categories')
+        .select(`
+          id,
+          name,
+          encyclopedia_entries (
+            name,
+            description,
+            image_url,
+            created_at
+          )
+        `)
+        .eq('name', categoryName)
+        .single();
+  
+      if (error) {
+        throw error;
+      }
+  
+      console.log("Fetched data:", data);
+      return data.encyclopedia_entries;
+    } catch (error) {
+      console.error('Error fetching encyclopedia entries:', error);
+      throw error;
+    }
+  };
+
+  const fetchFactsByEncyclopediaEntryId = async (encyclopediaEntryId: string) => {
+    const { data, error } = await client
+      .from(FACTS_ENTRIES_TABLE)
+      .select('*')
+      .eq('entry_id', encyclopediaEntryId);
+
+
+    if (error) {
+      console.error(`Error fetching facts for encyclopedia entry ID ${encyclopediaEntryId}:`, error);
+      throw error;
+    }
+
+    return data || [];
+  };
   const value = {
     userId,
     createIdentification,
@@ -249,6 +299,9 @@ export const SupabaseProvider = ({ children }: any) => {
     deleteFact,
     getUserById,
     insertUser,
+     // New methods
+     fetchEncyclopediaEntriesByCategory,
+     fetchFactsByEncyclopediaEntryId,
   };
 
   return <SupabaseContext.Provider value={value}>{children}</SupabaseContext.Provider>;

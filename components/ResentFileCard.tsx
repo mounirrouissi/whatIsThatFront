@@ -13,9 +13,13 @@ import { IconObject } from "@/app/types";
 export default function RecentFileCard({ iconObject }: { iconObject: IconObject }) {
   const router = useRouter();
   const theme = useColorScheme();
+  
   const handlePress = () => {
     console.log("pressed");
-    router.push('/(app)/ExploreBusinessList');
+    router.push({
+        pathname: '/(app)/ExploreBusinessList',
+        params: { someParam: iconObject.name }
+      });
   };
   return (
     <Animated.View
@@ -30,11 +34,11 @@ export default function RecentFileCard({ iconObject }: { iconObject: IconObject 
           colors={["#007bff", "#00bfff"]}
           style={styles.gradient}
         >
-          <MaterialCommunityIcons name={iconObject.name} size={32} color="white" style={styles.icon} />
+          <MaterialCommunityIcons name={iconObject.icon} size={32} color="white" style={styles.icon} />
         </LinearGradient>
         <View style={styles.textContainer}>
           <Text style={styles.title} numberOfLines={2}>
-            {iconObject.icon}
+            {iconObject.name}
           </Text>
         </View>
       </TouchableOpacity>

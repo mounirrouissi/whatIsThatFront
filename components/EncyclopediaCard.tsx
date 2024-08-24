@@ -1,20 +1,21 @@
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import React from "react";
-import  primary  from "../constants/Colors";
 import { useRouter } from "expo-router";
 
-export default function BusinessListCard({ business }) {
+export default function EncyclopediaCard({ business }) {
   const router = useRouter();
-  const handlePress = () => {
+
+  const handlePress2 = () => {
     console.log("pressed");
-    router.push('/(app)/ExploreBusinessList');
-  };const handlePress2 = () => {
-    console.log("pressed");
-    router.push('/(app)/BusinessDetail');
+    // Pass the entire business object as a parameter
+    router.push({
+      pathname: '/(app)/BusinessDetail',
+      params: { business: JSON.stringify(business) },
+    });
   };
+
   return (
     <TouchableOpacity
-    
       style={{
         padding: 10,
         margin: 10,
@@ -24,7 +25,6 @@ export default function BusinessListCard({ business }) {
         flexDirection: "row",
         gap: 10,
       }}
-      // onPress={() => router.push("/businessdetail/" + business.id)}
       onPress={handlePress2}
     >
       <Image
@@ -47,7 +47,7 @@ export default function BusinessListCard({ business }) {
         <Text
           style={{
             fontFamily: "outfit",
-            color: primary.primary,
+            color: "#007aff",
             fontSize: 15,
           }}
         >

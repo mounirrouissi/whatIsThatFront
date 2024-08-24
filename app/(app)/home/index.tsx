@@ -65,15 +65,15 @@ export default function TabOneScreen() {
   }; */
   const iconObject: IconObjectArray = {
     animals: [
-      { name: "mushroom", icon: "mushroom-outline" }, // MaterialCommunityIcons
-      { name: "cat", icon: "cat" }, // MaterialIcons
-      { name: "bird", icon: "bird" }, // MaterialIcons
+      { name: "Mushrooms", icon: "mushroom" }, // MaterialCommunityIcons
+      { name: "Animals", icon: "cat" }, // MaterialIcons
+      { name: "Birds", icon: "bird" }, // MaterialIcons
     ],
     rocks: [
-      { name: "wallpaper", icon: "rock" }, // MaterialCommunityIcons
+      { name: "Rocks", icon: "wallpaper" }, // MaterialCommunityIcons
     ],
     plants: [
-      { name: "flower", icon: "flower" }, // MaterialIcons
+      { name: "Plants", icon: "flower" }, // MaterialIcons
     ],
   };
 

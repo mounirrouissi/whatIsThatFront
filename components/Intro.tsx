@@ -63,7 +63,7 @@ import {
         </View>
   
         <Image
-          source={{ uri:  "https://via.placeholder.com/300x200?text=Hi" ||business?.imageUrl }}
+          source={{ uri:  business?.imageUrl || "https://via.placeholder.com/300x200?text=Hi" }}
           style={{
             width: "100%",
             height: 340,

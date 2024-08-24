@@ -1,58 +1,38 @@
-import { View, Text, ActivityIndicator, ScrollView } from "react-native";
-import React, { useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
-
-import primary from "@/constants/Colors";
-import Intro from "@/components/Intro";
-import About from "@/components/About";
-import Reviews from "@/components/Reviews";
+import { useEffect, useState } from 'react';
+import { ScrollView, View, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useSupabase } from '@/context/SupabaseContext'; // Ensure this import is correct
+import Intro from '@/components/Intro';
+import Fact from '@/components/Fact';
+import Reviews from '@/components/Reviews';
+import React from 'react';
 
 export default function BusinessDetail() {
-  const { businessid } = useLocalSearchParams();
-  const [business, setBusiness] = useState();
+  const { business } = useLocalSearchParams();
+  const [businessDetail, setBusinessDetail] = useState(null);
+  const [facts, setFacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { fetchFactsByEncyclopediaEntryId } = useSupabase(); // Ensure this import is correct
 
   useEffect(() => {
-    GetBsuinessDetailById();
-  }, []);
+    const fetchData = async () => {
+      if (business) {
+        const parsedBusiness = JSON.parse(business);
+        setBusinessDetail(parsedBusiness);
 
-  /**
-   * Used to get BusinessDetail by Id
-   * For now, using dummy data
-   **/
-  const GetBsuinessDetailById = async () => {
-    setLoading(true);
-    // Simulate network request
-    setTimeout(() => {
-      // Assuming businessid is a string for simplicity
-      const dummyBusiness = {
-        id: businessid,
-        name: "Dummy Business",
-        address: "123 Dummy St",
-        imageUrl: "https://example.com/dummy.jpg",
-        rating: 4.5,
-        about: "This is a dummy business for demonstration purposes.",
-        reviews: [
-          {
-            id: "1",
-            userName: "John Doe",
-            userImage: "https://example.com/user1.jpg",
-            comment: "Great service!",
-            rating: 5,
-          },
-          {
-            id: "2",
-            userName: "Jane Doe",
-            userImage: "https://example.com/user2.jpg",
-            comment: "Excellent food!",
-            rating: 4,
-          },
-        ],
-      };
-      setBusiness(dummyBusiness);
-      setLoading(false);
-    }, 1000);
-  };
+        try {
+          const fetchedFacts = await fetchFactsByEncyclopediaEntryId("8b44b686-88f1-474b-b44f-129b5d4df6e7");
+          setFacts(fetchedFacts);
+        } catch (error) {
+          console.error('Error fetching facts:', error);
+        }
+        
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [business]);
 
   return (
     <ScrollView>
@@ -62,22 +42,21 @@ export default function BusinessDetail() {
             marginTop: "70%",
           }}
           size={"large"}
-          color={primary.primary}
+          color={"#007aff"}
         />
       ) : (
-        <View>
-          {/* Intro */}
-          <Intro business={business} />
+        businessDetail && (
+          <View>
+            {/* Intro */}
+            <Intro business={businessDetail} />
 
-          {/* Action Buttons */}
-        
+            {/* Facts Section */}
+            <Fact facts={facts} />
 
-          {/* About Section  */}
-          <About business={business} />
-
-          {/* Reviews Section  */}
-          <Reviews business={business} />
-        </View>
+            {/* Reviews Section */}
+            <Reviews business={businessDetail} />
+          </View>
+        )
       )}
     </ScrollView>
   );
