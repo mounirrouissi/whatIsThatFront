@@ -32,3 +32,13 @@ export interface IdentificationDB {
     factNumber: 1 | 2 | 3;
   }[];
 }
+
+
+export type IconObject = {
+  name: string;
+  icon: string;
+};
+
+export type IconObjectArray = {
+  [key: string]: IconObject[];
+};

@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Image, Text, ScrollView, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
+import { View, Image, Text, ScrollView, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { client as supabase } from '@/utils/supabaseClient';
 import { useSupabase } from '@/context/SupabaseContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { IdentificationDB } from '../../types';
 import IdentificationDetails from '@/components/IdentificationDetails';
-
 export const MyObservs = () => {
   const categories = ['animal', 'bird', 'plant'];
   const [data, setData] = useState<{ [key: string]: IdentificationDB[] }>({});
   const [loading, setLoading] = useState(true);
   const { userId } = useAuth();
   const [selectedIdentification, setSelectedIdentification] = useState<IdentificationDB | null>(null);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,17 +58,14 @@ export const MyObservs = () => {
           data={items}
           horizontal
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => setSelectedIdentification(item)}>
-              <View style={styles.itemContainer}>
-                <Image 
-                  source={{ uri: item.imageUrl}} 
-                  style={styles.image} 
-                />
-                <Text style={styles.itemText}>{item.speciesId || 'Unknown'}</Text>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.itemContainer}> 
+              {/* Placeholder for image */}
+              <View style={styles.image} /> 
+              {/* Placeholder for text */}
+              <Text style={styles.itemText}>Loading...</Text> 
+            </View>
           )}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => index.toString()} 
         />
       </View>
     );
@@ -76,23 +73,19 @@ export const MyObservs = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {categories.map(renderCategory)}
-      </ScrollView>
-      <Modal
-        visible={!!selectedIdentification}
-        onRequestClose={() => setSelectedIdentification(null)}
-        animationType="slide"
-      >
-        {selectedIdentification && (
-          <IdentificationDetails identification={selectedIdentification} />
-        )}
-      </Modal>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : (
+        <ScrollView>
+          {categories.map(renderCategory)}
+        </ScrollView>
+      )}
     </View>
   );
 };
 
-  
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -115,15 +108,11 @@ const styles = StyleSheet.create({
     padding: 10,
     marginRight: 10,
     borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2.22,
-    elevation: 3,
   },
   image: {
     width: 100,
     height: 100,
+    backgroundColor: '#eee', // Placeholder background color
     borderRadius: 5,
     marginBottom: 5,
   },
@@ -132,11 +121,6 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
   },
-  noDataText: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center',
-  },
 });
 
-export default MyObservs;
+export default MyObservs; 

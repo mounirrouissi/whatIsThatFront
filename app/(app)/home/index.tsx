@@ -1,89 +1,238 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity } from 'react-native';
-import { useSupabase } from '@/context/SupabaseContext'; // Adjust the import path as needed
-import { Identification } from '@/types/enums'; // Adjust the import path as needed
-import { client } from '@/utils/supabaseClient';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Animated,Easing } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSupabase } from '@/context/SupabaseContext';
 import { useClerk } from '@clerk/clerk-expo';
-import { router } from 'expo-router';
+import { ScrollView } from 'react-native-gesture-handler';
+import ResentFileCard from '@/components/ResentFileCard';
+import { IconObjectArray } from '@/app/types';
 
-interface IdentificationData {
-  id: number;
-  user_id: string;
-  image_url: string;
-  species_id: string;
-  identified_at: string;
-  type: string;
-}
+
+const SkeletonItem = () => {
+  const animatedValue = new Animated.Value(0);
+  
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#E0E0E0', '#F5F5F5'],
+  });
+
+  return (
+    <View style={styles.item}>
+      <Animated.View style={[styles.itemImage, { backgroundColor }]} />
+      <View style={styles.itemContent}>
+        <Animated.View style={[styles.skeletonLine, { width: '70%', backgroundColor }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '40%', backgroundColor }]} />
+      </View>
+    </View>
+  );
+};
 
 export default function TabOneScreen() {
-  const [identifications, setIdentifications] = useState<IdentificationData[]>([]);
+  const [identifications, setIdentifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { getIdentifications, userId } = useSupabase();
- const {signOut} = useClerk()
+  const { signOut } = useClerk();
+  const router = useRouter();
+  const [sharedElementAnimation, setSharedElementAnimation] = useState(new Animated.Value(0));
+  const [selectedIdentification, setSelectedIdentification] = useState(null);
 
-  const handleLogout = async () => {
+
+  /* const handleLogout = async () => {
     try {
       await signOut();
-                    router.push('/(auth)/auth');
-
+      router.push('/(auth)/auth');
       console.log("User logged out");
     } catch (error) {
       console.error("Error logging out:", error);
     }
+  }; */
+  const iconObject: IconObjectArray = {
+    animals: [
+      { name: "mushroom", icon: "mushroom-outline" }, // MaterialCommunityIcons
+      { name: "cat", icon: "cat" }, // MaterialIcons
+      { name: "bird", icon: "bird" }, // MaterialIcons
+    ],
+    rocks: [
+      { name: "wallpaper", icon: "rock" }, // MaterialCommunityIcons
+    ],
+    plants: [
+      { name: "flower", icon: "flower" }, // MaterialIcons
+    ],
   };
-
 
   useEffect(() => {
     fetchIdentifications();
   }, []);
 
   const fetchIdentifications = async () => {
+    setIsLoading(true);
     console.log('Fetching identifications...');
     console.log("user id "+userId);
 
-    // should use the context 
-    const data= await getIdentifications(userId as string)
+    const data = await getIdentifications(userId);
     
-    
-    console.log("data: "+ JSON.stringify(data)); 
-
-   if (data) {
-    setIdentifications(data);
-    console.log("data: "+ JSON.stringify(data)); 
-  }
-
+    if (data) {
+      setIdentifications(data);
+      console.log("data: "+ JSON.stringify(data)); 
+    }
+    setIsLoading(false);
   };
-//TODO use transition and a gallery of images 
-  const renderItem = ({ item }: { item: Identification }) => (
-    <View style={styles.item}>
-      <Image 
-        source={{ uri: item.image_url || 'https://via.placeholder.com/10' }} 
-        style={styles.itemImage}
-      />
-      <View style={styles.itemContent}>
-        <Text style={styles.itemTitle}>{item.type}</Text>
-        <Text style={styles.itemDate}>{new Date(item.identified_at).toLocaleDateString()}</Text>
-      </View>
-    </View>
+
+  const renderItem = ({ item }: { item: any }) => {
+    const handlePress = () => {
+      setSelectedIdentification(item);
+      Animated.timing(sharedElementAnimation, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+    };
+    return (
+      <TouchableOpacity style={styles.item} onPress={handlePress}>
+        <Animated.Image
+          source={{ uri: item.image_url || 'https://via.placeholder.com/10' }}
+          style={[
+            styles.itemImage,
+            {
+              transform: [
+                {
+                  scale: sharedElementAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.2],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+        <View style={styles.itemContent}>
+          <Text style={styles.itemTitle}>{item.type}</Text>
+          <Text style={styles.itemDate}>{new Date(item.identified_at).toLocaleDateString()}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderSkeletonList = () => (
+    <FlatList
+      data={[...Array(5)]}
+      renderItem={() => <SkeletonItem />}
+      keyExtractor={(_, index) => index.toString()}
+      style={styles.list}
+    />
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <TouchableOpacity onPress={handleLogout}>
-
-        <Image
-          source={{ uri: 'https://images.dog.ceo//breeds//poodle-miniature//n02113712_8473.jpg' }} // Replace with actual user image URL
-          style={styles.userImage}
-        />
-</TouchableOpacity>        
+      <ScrollView
+           contentContainerStyle={{
+            gap: 16,
+            padding: 16,
+            paddingRight: 24,
+          }}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={120}
+          snapToAlignment="center"
+      >
+        {Object.values(iconObject).map((values) => (
+          values.map((val) => (
+            <ResentFileCard key={val.name} iconObject={val} />
+          ))
+        ))}
+        
+      </ScrollView>
       </View>
       <Text style={styles.title}>Latest Identifications</Text>
-      <FlatList
-        data={identifications}
-        renderItem={renderItem}
-        keyExtractor={item => item.id.toString()}
-        style={styles.list}
-      />
+      {isLoading ? (
+        renderSkeletonList()
+      ) : (
+        <FlatList
+          data={identifications}
+          renderItem={renderItem}
+          keyExtractor={item => item.id.toString()}
+          style={styles.list}
+        />
+      )}
+
+{selectedIdentification && (
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            transform: [
+              {
+                scale: sharedElementAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.5, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        <Animated.Image
+          source={{ uri: selectedIdentification.image_url }}
+          style={[
+            { width: '80%', height: '80%', borderRadius: 10 },
+            {
+              transform: [
+                {
+                  scale: sharedElementAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.5, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+            padding: 10,
+            borderRadius: 20,
+          }}
+          onPress={() => {
+            Animated.timing(sharedElementAnimation, {
+              toValue: 0,
+              duration: 300,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }).start(() => {
+              setSelectedIdentification(null);
+            });
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>Close</Text>
+        </TouchableOpacity>
+      </Animated.View>)}
     </View>
   );
 }
@@ -126,6 +275,7 @@ const styles = StyleSheet.create({
   },
   itemContent: {
     flex: 1,
+    justifyContent: 'center',
   },
   itemTitle: {
     fontSize: 18,
@@ -134,5 +284,10 @@ const styles = StyleSheet.create({
   itemDate: {
     fontSize: 14,
     color: '#666',
+  },
+  skeletonLine: {
+    height: 20,
+    marginBottom: 6,
+    borderRadius: 4,
   },
 });

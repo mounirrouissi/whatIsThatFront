@@ -31,7 +31,7 @@ export default function TabLayout() {
         name="index"
         options={{
           tabBarLabel: 'Explore',
-          tabBarIcon: ({ size, color }) => <Ionicons name="search" size={size} color={color} />,
+          tabBarIcon: ({ size, color }) => <Ionicons name="earth" size={size} color={color} />,
           headerShown: false, // Ensure header is shown
 
         }}

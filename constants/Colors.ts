@@ -23,3 +23,7 @@ export default {
   turquoise: '#00BCD4',  // Turquoise for tropical waters
   coral: '#FF7F50',      // Coral for fish/flowers
 };
+
+
+
+
