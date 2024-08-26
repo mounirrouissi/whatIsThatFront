@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import EncyclopediaCard from "@/components/EncyclopediaCard";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSupabase} from '@/context/SupabaseContext'; // Adjust the import path as needed
+import { EncyclopediaEntry } from "../types";
 
 export default function EncyclopediaList() {
   const { someParam } = useLocalSearchParams();
@@ -14,9 +15,10 @@ console.log("someParam", someParam +"");
       console.log("fetching data");
       try {
         if (fetchEncyclopediaEntriesByCategory) {
-          const data = await fetchEncyclopediaEntriesByCategory(someParam as string); // Replace 'Animals' with your desired category
-          const formattedData = data.map((item: any, index: number) => ({
-            id: index.toString(),
+          const data:EncyclopediaEntry[] = await fetchEncyclopediaEntriesByCategory(someParam as string); // Replace 'Animals' with your desired category
+          console.log("entries are ", data);
+          const formattedData = data.map((item: EncyclopediaEntry, index: number) => ({
+            id: item.id,
             name: item.name,
             address: item.description, // Adjust if needed
           imageUrl: item.image_url,

@@ -1,27 +1,58 @@
 export default {
   primary: '#4CAF50',    // Green for plants
   secondary: '#2196F3',  // Blue for sky/water
-  lime: '#8BC34A',       // Light green for leaves
-  pink: '#E91E63',       // Vibrant pink for flowers
-  brown: '#795548',      // Earth tone for soil/bark
-  sky: '#03A9F4',        // Sky blue
-  teal: '#009688',       // Teal for aquatic plants
-  yellow: '#FFC107',     // Yellow for flowers/birds
-  orange: '#FF9800',     // Orange for fruits/birds
-  blue: '#3F51B5',       // Indigo blue for water/sky
-  green: '#1B5E20',      // Dark green for forests
-  light: '#F5F5F5',      // Off-white for backgrounds
-  grey: '#9E9E9E',       // Neutral grey
-  greyLight: '#E0E0E0',  // Light grey for UI elements
-  input: '#FFFFFF',      // White for input fields
-  selected: '#C8E6C9',   // Light green for selected items
-  dark: '#212121',       // Dark grey for text
-  purple: '#9C27B0',     // Purple for exotic flowers
-  red: '#F44336',        // Red for berries/birds
-  black: '#000000',      // Black for text/outlines
-  beige: '#F5E6D3',      // Beige for animal fur
-  turquoise: '#00BCD4',  // Turquoise for tropical waters
-  coral: '#FF7F50',      // Coral for fish/flowers
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  accent: '#FF4081',     // Vibrant pink accent
+  background: '#FAFAFA', // Light background
+  surface: '#FFFFFF',    // White surface
+  error: '#F44336',      // Error red
+  text: {
+    primary: '#212121',  // Primary text
+    secondary: '#757575',// Secondary text
+    disabled: '#BDBDBD', // Disabled text
+  },
+  action: {
+    active: '#212121',   // Active icons/buttons
+    hover: '#E0E0E0',    // Hover state
+    selected: '#E8F5E9', // Selected state
+  },
+  divider: '#EEEEEE',    // Divider color
+  success: '#4CAF50',    // Success green
+  warning: '#FFC107',    // Warning yellow
+  info: '#2196F3',       // Info blue
+  light: '#F5F5F5',      // Light shade
+  dark: '#212121',       // Dark shade
+  neutral: {
+    100: '#F5F5F5',
+    200: '#EEEEEE',
+    300: '#E0E0E0',
+    400: '#BDBDBD',
+    500: '#9E9E9E',
+    600: '#757575',
+    700: '#616161',
+    800: '#424242',
+    900: '#212121',
+  },
 };
 
 

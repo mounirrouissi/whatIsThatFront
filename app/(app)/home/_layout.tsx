@@ -22,21 +22,21 @@ export default function TabLayout() {
         
         tabBarActiveTintColor: Colors.primary,
         tabBarLabelStyle: {
-          fontFamily: 'mon-sb',
         },
       }}>
       
-      
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          tabBarLabel: 'Explore',
-          tabBarIcon: ({ size, color }) => <Ionicons name="earth" size={size} color={color} />,
-          headerShown: false, // Ensure header is shown
-
+          tabBarLabel: "home",
+          title: "home",
+          headerShown: false,
         }}
       />
-      <Tabs.Screen
+      
+    
+
+        <Tabs.Screen
         name="camera"
         options={{
           tabBarLabel: 'IdentifyyThatThing',
@@ -54,17 +54,12 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="enclypodia"
+       <Tabs.Screen
+        name="Observations"
         options={{
-          tabBarLabel: 'enclypodia',
+          tabBarLabel: "Observations",
+          title: "Observations",
           headerShown: false,
-          tabBarIcon: ({ size, color }) => (
-            <Ionicons name="airplane" size={size} color={color} />
-          ),
-          
-
-
         }}
       />
     </Tabs>

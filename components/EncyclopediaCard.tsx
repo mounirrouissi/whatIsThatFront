@@ -9,7 +9,7 @@ export default function EncyclopediaCard({ business }) {
     console.log("pressed");
     // Pass the entire business object as a parameter
     router.push({
-      pathname: '/(app)/BusinessDetail',
+      pathname: '/(app)/EncyclopediaEntryDetail',
       params: { business: JSON.stringify(business) },
     });
   };

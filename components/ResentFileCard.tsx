@@ -17,7 +17,7 @@ export default function RecentFileCard({ iconObject }: { iconObject: IconObject 
   const handlePress = () => {
     console.log("pressed");
     router.push({
-        pathname: '/(app)/ExploreBusinessList',
+        pathname: '/(app)/EncyclopediaEntries',
         params: { someParam: iconObject.name }
       });
   };
@@ -28,13 +28,12 @@ export default function RecentFileCard({ iconObject }: { iconObject: IconObject 
       exiting={SlideOutLeft}
       style={styles.container}
     >
-      <TouchableOpacity style={styles.touchable}
-      onPress={handlePress}>
+      <TouchableOpacity style={styles.touchable} onPress={handlePress}>
         <LinearGradient
           colors={["#007bff", "#00bfff"]}
           style={styles.gradient}
         >
-          <MaterialCommunityIcons name={iconObject.icon} size={32} color="white" style={styles.icon} />
+          <MaterialCommunityIcons name={iconObject.icon} size={40} color="white" style={styles.icon} />
         </LinearGradient>
         <View style={styles.textContainer}>
           <Text style={styles.title} numberOfLines={2}>
@@ -46,43 +45,53 @@ export default function RecentFileCard({ iconObject }: { iconObject: IconObject 
   );
 }
 
+  
 const styles = StyleSheet.create({
-  container: {
-    width: 150,
-    height: 180,
-    borderRadius: 16,
-    backgroundColor: 'white',
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    container: {
+      width: 160,
+      height: 200,
+      borderRadius: 22, // slightly rounded corners for modern look
+      backgroundColor: 'white',
+      shadowColor: "#000",
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.25, // reduced shadow opacity for a softer effect
+      shadowRadius: 5.5,
+      elevation: 9,
+      overflow: 'hidden',
+      margin: 10, // balanced margin for layout symmetry
+      transform: [{ scale: 1 }], // initial scale
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    overflow: 'hidden',
-  },
-  touchable: {
-    flex: 1,
-  },
-  gradient: {
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  icon: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    padding: 8,
-  },
-  textContainer: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'center',
-  },
-  title: {
-    fontWeight: "600",
-    fontSize: 16,
-    textAlign: 'center',
-  },
-});
+    touchable: {
+      flex: 1,
+      activeOpacity: 0.8, // reduces opacity on press for better feedback
+    },
+    gradient: {
+      height: 120,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative', // relative positioning for overlay
+    },
+    icon: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: 22,
+      padding: 12,
+      position: 'absolute',
+      zIndex: 1, // elevate icon above overlay
+    },
+    textContainer: {
+      flex: 1,
+      padding: 18, // adjusted padding for better content balance
+      justifyContent: 'center',
+    },
+    title: {
+      fontWeight: "700",
+      fontSize: 18,
+      textAlign: 'center',
+      color: '#333',
+      letterSpacing: 0.5, // adds letter spacing for a polished text appearance
+    },
+  });
+  

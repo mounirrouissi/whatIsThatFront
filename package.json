@@ -21,6 +21,7 @@
     "@react-navigation/drawer": "^6.7.2",
     "@react-navigation/native": "^6.0.2",
     "@supabase/supabase-js": "^2.45.1",
+    "@types/uuid": "^10.0.0",
     "axios": "^1.7.3",
     "base64-arraybuffer": "^1.0.2",
     "expo": "~51.0.22",
@@ -51,6 +52,7 @@
     "react-native-skeleton-placeholder": "^5.2.4",
     "react-native-web": "~0.19.10",
     "supabase": "^1.190.0",
+    "uuid": "^10.0.0",
     "whatisthat": "file:"
   },
   "devDependencies": {

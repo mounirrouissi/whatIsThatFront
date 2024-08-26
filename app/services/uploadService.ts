@@ -19,6 +19,6 @@ export const uploadImageToR2 = async (uri: string): Promise<string> => {
 };
 
 export const identifyImage = async (imageUrl: string,selectedCategory:string): Promise<BackendResponse> => {
-  const response = await axios.post<BackendResponse>('https://a8ea-197-29-230-64.ngrok-free.app/identify', { imageUrl });
+  const response = await axios.post<BackendResponse>('https://2b42-197-27-112-165.ngrok-free.app/identify', { imageUrl });
   return response.data;
 };

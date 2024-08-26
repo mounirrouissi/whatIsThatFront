@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Animated,Easing } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSupabase } from '@/context/SupabaseContext';
 import { useClerk } from '@clerk/clerk-expo';
 import { ScrollView } from 'react-native-gesture-handler';
 import ResentFileCard from '@/components/ResentFileCard';
 import { IconObjectArray } from '@/app/types';
-
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 const SkeletonItem = () => {
   const animatedValue = new Animated.Value(0);
@@ -47,33 +48,32 @@ const SkeletonItem = () => {
 export default function TabOneScreen() {
   const [identifications, setIdentifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { getIdentifications, userId } = useSupabase();
+  const { getIdentifications, userId, getUserById } = useSupabase();
   const { signOut } = useClerk();
   const router = useRouter();
-  const [sharedElementAnimation, setSharedElementAnimation] = useState(new Animated.Value(0));
+  const [sharedElementAnimation] = useState(new Animated.Value(0));
   const [selectedIdentification, setSelectedIdentification] = useState(null);
+  const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const fetchedUser = await getUserById(userId);
+      setUser(fetchedUser);
+    };
+    fetchUser();
+  }, [userId, getUserById]);
 
-  /* const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push('/(auth)/auth');
-      console.log("User logged out");
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  }; */
   const iconObject: IconObjectArray = {
     animals: [
-      { name: "Mushrooms", icon: "mushroom" }, // MaterialCommunityIcons
-      { name: "Animals", icon: "cat" }, // MaterialIcons
-      { name: "Birds", icon: "bird" }, // MaterialIcons
+      { name: "Mushrooms", icon: "mushroom" },
+      { name: "Animals", icon: "cat" },
+      { name: "Birds", icon: "bird" },
     ],
     rocks: [
-      { name: "Rocks", icon: "wallpaper" }, // MaterialCommunityIcons
+      { name: "Rocks", icon: "wallpaper" },
     ],
     plants: [
-      { name: "Plants", icon: "flower" }, // MaterialIcons
+      { name: "Plants", icon: "flower" },
     ],
   };
 
@@ -83,14 +83,9 @@ export default function TabOneScreen() {
 
   const fetchIdentifications = async () => {
     setIsLoading(true);
-    console.log('Fetching identifications...');
-    console.log("user id "+userId);
-
     const data = await getIdentifications(userId);
-    
     if (data) {
       setIdentifications(data);
-      console.log("data: "+ JSON.stringify(data)); 
     }
     setIsLoading(false);
   };
@@ -141,10 +136,13 @@ export default function TabOneScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#4c669f', '#3b5998', '#192f6a']}
+      style={styles.container}
+    >
       <View style={styles.header}>
-      <ScrollView
-           contentContainerStyle={{
+        <ScrollView
+          contentContainerStyle={{
             gap: 16,
             padding: 16,
             paddingRight: 24,
@@ -154,14 +152,13 @@ export default function TabOneScreen() {
           decelerationRate="fast"
           snapToInterval={120}
           snapToAlignment="center"
-      >
-        {Object.values(iconObject).map((values) => (
-          values.map((val) => (
-            <ResentFileCard key={val.name} iconObject={val} />
-          ))
-        ))}
-        
-      </ScrollView>
+        >
+          {Object.values(iconObject).map((values) => (
+            values.map((val) => (
+              <ResentFileCard key={val.name} iconObject={val} />
+            ))
+          ))}
+        </ScrollView>
       </View>
       <Text style={styles.title}>Latest Identifications</Text>
       {isLoading ? (
@@ -174,31 +171,13 @@ export default function TabOneScreen() {
           style={styles.list}
         />
       )}
-
-{selectedIdentification && (
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            transform: [
-              {
-                scale: sharedElementAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.5, 1],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        <Animated.Image
-          source={{ uri: selectedIdentification.image_url }}
+      {selectedIdentification && (
+        <Animated.View
           style={[
-            { width: '80%', height: '80%', borderRadius: 10 },
+            StyleSheet.absoluteFillObject,
+            styles.modalContainer,
             {
+              opacity: sharedElementAnimation,
               transform: [
                 {
                   scale: sharedElementAnimation.interpolate({
@@ -209,31 +188,45 @@ export default function TabOneScreen() {
               ],
             },
           ]}
-        />
-        <TouchableOpacity
-          style={{
-            position: 'absolute',
-            top: 20,
-            right: 20,
-            backgroundColor: 'rgba(255, 255, 255, 0.3)',
-            padding: 10,
-            borderRadius: 20,
-          }}
-          onPress={() => {
-            Animated.timing(sharedElementAnimation, {
-              toValue: 0,
-              duration: 300,
-              easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
-            }).start(() => {
-              setSelectedIdentification(null);
-            });
-          }}
         >
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>Close</Text>
-        </TouchableOpacity>
-      </Animated.View>)}
-    </View>
+          <Animated.Image
+            source={{ uri: selectedIdentification.image_url }}
+            style={[
+              styles.modalImage,
+              {
+                transform: [
+                  {
+                    scale: sharedElementAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{user?.full_name}</Text>
+            <Text style={styles.userIdentifiedDate}>Identified at: {new Date(selectedIdentification.identified_at).toLocaleString()}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => {
+              Animated.timing(sharedElementAnimation, {
+                toValue: 0,
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }).start(() => {
+                setSelectedIdentification(null);
+              });
+            }}
+          >
+            <Ionicons name="close" size={24} color="white" style={styles.closeText} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+    </LinearGradient>
   );
 }
 
@@ -247,16 +240,13 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     marginBottom: 20,
   },
-  userImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     alignSelf: 'flex-start',
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#FFFFFF',
+    paddingHorizontal: 16,
   },
   list: {
     width: '100%',
@@ -265,12 +255,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 10,
+    borderRadius: 10,
+    marginHorizontal: 16,
   },
   itemImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     marginRight: 15,
   },
   itemContent: {
@@ -280,14 +274,56 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   itemDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#CCCCCC',
   },
   skeletonLine: {
     height: 20,
     marginBottom: 6,
     borderRadius: 4,
+  },
+  modalContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '90%',
+    height: '70%',
+    borderRadius: 20,
+  },
+  userInfo: {
+    position: 'absolute',
+    bottom: 30,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 15,
+    borderRadius: 15,
+  },
+  userName: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    padding: 15,
+    borderRadius: 30,
+  },
+  closeText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  userIdentifiedDate: {
+    color: 'white',
+    fontSize: 14,
+    marginTop: 10,
   },
 });

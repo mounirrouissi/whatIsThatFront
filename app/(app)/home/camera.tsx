@@ -10,7 +10,7 @@ import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { client as supabase } from '@/utils/supabaseClient';
 import { useSupabase } from '@/context/SupabaseContext';
 import BackButton from '@/components/BackButton';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter, useSegments } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Swiper from 'react-native-deck-swiper';
 
@@ -31,6 +31,8 @@ function camera() {
   const { userId } = useAuth();
   const { getUserById, insertUser, createIdentification } = useSupabase();
   const navigation = useNavigation();
+  const router = useRouter();
+
 
   const categories = [
     { label: 'Anything', emoji: '🌎', value: 'anything' },
@@ -50,6 +52,11 @@ function camera() {
     })();
   }, []);
 
+  const handleBackPress = () => {
+        router.replace('/home');
+    
+  };
+  
   const handleUploadAndIdentify = useCallback(async (uri) => {
     setIsLoading(true);
     setError(null);
@@ -185,7 +192,7 @@ function camera() {
 
   if (hasPermission === null) return <View />;
   if (hasPermission === false) return <Text style={styles.errorText}>No access to camera or gallery</Text>;
-  if (error) return <Text style={styles.errorText}>{error}</Text>;
+  // if (error) return <Text style={styles.errorText}>{error}</Text>;
 
   return (
     <View style={styles.container}>
@@ -195,7 +202,10 @@ function camera() {
           <Text style={styles.loadingText}>Identifying image...</Text>
         </View>
       )}
-      <BackButton onBackPress={() => navigation.goBack()} />
+      <BackButton onBackPress={handleBackPress} />
+
+
+
 
       {image ? (
         <View style={styles.resultContainer}>
@@ -280,29 +290,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    paddingHorizontal: 10,
   },
   categoryButton: {
-    padding: 10,
-
+    padding: 12,
     borderRadius: 30,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    marginHorizontal: 5,
+    marginHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   selectedCategory: {
     backgroundColor: 'white',
   },
   categoryEmoji: {
-
-    fontSize: 30,
+    fontSize: 32,
   },
-
   categoryTitle: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 15,
+    textAlign: 'center',
   },
-
   container: {
     flex: 1,
     backgroundColor: '#000',
@@ -312,38 +325,46 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 50,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     width: '100%',
   },
   circleButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureInner: {
     width: 70,
     height: 70,
     borderRadius: 35,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  captureButton: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  captureInner: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: 'white',
   },
   imagePreview: {
     flex: 1,
-
-
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
@@ -352,6 +373,7 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginTop: 50,
+    fontSize: 18,
   },
   resultContainer: {
     flex: 1,
@@ -362,13 +384,18 @@ const styles = StyleSheet.create({
     bottom: 40,
     alignSelf: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 20,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   backButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   loadingContainer: {
@@ -384,15 +411,16 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: 'white',
-    fontSize: 18,
-    marginTop: 16,
+    fontSize: 20,
+    marginTop: 20,
   },
   instructionsContainer: {
     position: 'absolute',
     top: '50%',
-    left: 0,
-    right: 0,
+    left: 20,
+    right: 20,
     transform: [{ translateY: -50 }],
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     paddingHorizontal: 20,
     alignItems: 'center',

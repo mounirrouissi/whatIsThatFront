@@ -3,19 +3,31 @@ import { client } from '@/utils/supabaseClient';
 import { useAuth } from '@clerk/clerk-expo';
 import { Species, Identification, Fact } from '@/types/enums';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 
 export const USERS_TABLE = 'users';
 export const IDENTIFICATIONS_TABLE = 'identifications';
 export const SPECIES_TABLE = 'species';
-export const USER_FAVORITES_TABLE = 'user_favorites';
 export const FACTS_TABLE = 'facts';
 export const ENCYCLOPEDIA_TABLE = 'encyclopedia_entries';
 const CATEGORIES_TABLE = 'categories';
 
 export const FACTS_ENTRIES_TABLE = 'encyclopedia_facts';
+export const USER_FAVORITES_TABLE = 'user_favorites';
+
+type EncyclopediaArticle = {
+  id: number;
+  title: string;
+  content: string;
+  is_offline: boolean;
+};
+
+
 
 type ProviderProps = {
   userId: string | null;
+  getArticles: () => Promise<EncyclopediaArticle[]>;
+
   createIdentification: (userId: string, imageUrl: string, speciesId: string | null, type: string,resemblance_rank:number,original_image_url:string) => Promise<any>;
   getIdentifications: (userId: string) => Promise<any>;
   getIdentificationInfo: (identificationId: string) => Promise<any>;
@@ -27,9 +39,7 @@ type ProviderProps = {
   addSpecies: (scientificName: string, commonName: string, category: string, description: string, habitat: string) => Promise<any>;
   updateSpecies: (species: Species) => Promise<any>;
   deleteSpecies: (id: string) => Promise<any>;
-  getFavorites: (userId: string) => Promise<any>;
-  addFavorite: (userId: string, speciesId: string) => Promise<any>;
-  removeFavorite: (userId: string, speciesId: string) => Promise<any>;
+  
   getFacts: (identificationId: string) => Promise<any>;
   addFact: (identificationId: string, fact: string, factNumber: number) => Promise<any>;
   updateFact: (fact: Fact) => Promise<any>;
@@ -39,6 +49,11 @@ type ProviderProps = {
    // New methods
    fetchEncyclopediaEntriesByCategory: (category: string) => Promise<any>;
    fetchFactsByEncyclopediaEntryId: (encyclopediaEntryId: string) => Promise<any>;
+
+     // New methods for user favorites
+  addFavorite: (userId: string, encyclopediaEntryId: string) => Promise<any>;
+  getFavoritesByUserId: (userId: string) => Promise<any>;
+  removeFavorite: (userId: string, encyclopediaEntryId: string) => Promise<any>;
 };
 
 const SupabaseContext = createContext<Partial<ProviderProps>>({});
@@ -151,27 +166,7 @@ export const SupabaseProvider = ({ children }: any) => {
     return await client.from(SPECIES_TABLE).delete().match({ id: id });
   };
 
-  const getFavorites = async (userId: string) => {
-    const { data } = await client
-      .from(USER_FAVORITES_TABLE)
-      .select(`*, species (*)`)
-      .eq('user_id', userId);
-
-    return data || [];
-  };
-
-  const addFavorite = async (userId: string, speciesId: string) => {
-    return await client
-      .from(USER_FAVORITES_TABLE)
-      .insert({ user_id: userId, species_id: speciesId });
-  };
-
-  const removeFavorite = async (userId: string, speciesId: string) => {
-    return await client
-      .from(USER_FAVORITES_TABLE)
-      .delete()
-      .match({ user_id: userId, species_id: speciesId });
-  };
+  
 
   const getFacts = async (identificationId: string) => {
     const { data } = await client
@@ -236,6 +231,21 @@ export const SupabaseProvider = ({ children }: any) => {
     return data;
   };
 
+
+  // Fetch all articles
+  const getArticles = async (): Promise<EncyclopediaArticle[]> => {
+    const { data, error } = await client
+      .from('encyclopedia_articles')
+      .select('*');
+    if (error) {
+      console.error('Error fetching articles:', error);
+      return [];
+    }
+    return data || [];
+  };
+
+
+
   const fetchEncyclopediaEntriesByCategory = async (categoryName: string) => {
     try {
       const { data, error } = await client
@@ -244,6 +254,7 @@ export const SupabaseProvider = ({ children }: any) => {
           id,
           name,
           encyclopedia_entries (
+          id,
             name,
             description,
             image_url,
@@ -279,6 +290,54 @@ export const SupabaseProvider = ({ children }: any) => {
 
     return data || [];
   };
+
+//favorites
+const addFavorite = async (userId: string, encyclopediaEntryId: string) => {
+  console.log("ecyclopediaEntryId "+encyclopediaEntryId);
+ 
+  const { data, error } = await client
+    .from('user_favorites')
+    .upsert([{ user_id: userId,  created_at: new Date(), encyclopedia_entry_id: encyclopediaEntryId}]);
+
+  if (error) {
+    console.error('Error adding favorite:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+const removeFavorite = async (userId: string, encyclopediaEntryId: string) => {
+console.log("ecyclopediaEntryId "+encyclopediaEntryId);
+  const { data, error } = await client
+    .from('user_favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('encyclopedia_entry_id', encyclopediaEntryId);
+
+  if (error) {
+    console.error('Error removing favorite:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+const getFavoritesByUserId = async (userId: string) => {
+  console.log("getting favorites for user with id "+userId)
+  const { data, error } = await client
+    .from('user_favorites')
+    .select('encyclopedia_entry_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Error fetching favorites:', error);
+    throw error;
+  }
+
+  return data;
+};
+
   const value = {
     userId,
     createIdentification,
@@ -290,10 +349,7 @@ export const SupabaseProvider = ({ children }: any) => {
     addSpecies,
     updateSpecies,
     deleteSpecies,
-    getFavorites,
-    addFavorite,
-    removeFavorite,
-    getFacts,
+      getFacts,
     addFact,
     updateFact,
     deleteFact,
@@ -302,6 +358,12 @@ export const SupabaseProvider = ({ children }: any) => {
      // New methods
      fetchEncyclopediaEntriesByCategory,
      fetchFactsByEncyclopediaEntryId,
+     //favorites
+     addFavorite,
+     removeFavorite,
+     getFavoritesByUserId,
+     //articles
+     getArticles
   };
 
   return <SupabaseContext.Provider value={value}>{children}</SupabaseContext.Provider>;

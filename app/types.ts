@@ -42,3 +42,49 @@ export type IconObject = {
 export type IconObjectArray = {
   [key: string]: IconObject[];
 };
+
+
+
+//encyclopedia 
+
+// TypeScript types for Categories table
+export interface Category {
+  id: string; // UUID
+  name: string; // text
+}
+
+// TypeScript types for EncyclopediaEntries table
+export interface EncyclopediaEntry {
+  id: string; // UUID
+  category_id: string; // UUID
+  name: string; // text
+  description: string; // text
+  image_url: string; // text
+  scientific_name: string; // text
+  habitat: string; // text
+  diet: string; // text
+  danger_level: string; // text
+  created_at: string; // timestamp with time zone
+  updated_at: string; // timestamp with time zone
+}
+
+// TypeScript types for EncyclopediaFacts table
+export interface EncyclopediaFact {
+  id: string; // UUID
+  entry_id: string; // UUID
+  fact: string; // text
+}
+
+
+// TypeScript types for observations
+
+export type Observation = {
+  id: number;
+  identified_at: string;
+  image_url: string;
+  original_image_url: string;
+  resemblance_rank: number;
+  species_id: number | null;
+  type: string;
+  user_id: string;
+};

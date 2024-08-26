@@ -1,26 +1,34 @@
-// BackButton.js
-
-import React, { useEffect } from 'react';
-import { BackHandler, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React from 'react';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
-const BackButton = ({ onBackPress }) => {
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      onBackPress(); // Call the provided callback when back button is pressed
-      return true; // Prevent default back action
-    });
+interface BackButtonProps {
+  color?: string;
+  size?: number;
+  backTo: string; // New prop for the route to go back to
 
-    return () => {
-      backHandler.remove(); // Clean up the event listener when component unmounts
-    };
-  }, [onBackPress]);
+}
+
+export const BackButton: React.FC<BackButtonProps> = ({ color = 'white', size = 28 ,backTo}, to:string) => {
+  const router = useRouter();
+  console.log(" back to "+backTo)
 
   return (
-    <TouchableOpacity onPress={onBackPress}>
-      <Ionicons name="arrow-back" size={24} color="black"  style={{padding:10}}/>
+    <TouchableOpacity style={styles.button} onPress={() => router.push("(app)/home/Observations")}>
+      <Ionicons name="chevron-back" size={size} color={color} />
     </TouchableOpacity>
   );
 };
 
-export default BackButton;
+const styles = StyleSheet.create({
+  button: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+});
