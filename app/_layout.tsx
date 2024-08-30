@@ -1,49 +1,35 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, NavigationContainer, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { router, Slot, Stack, useRouter, useSegments } from 'expo-router';
+import { Drawer } from 'expo-router/drawer';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import LinkingConfiguration from './LinkingConfiguration';
-
 import { useColorScheme } from '@/components/useColorScheme';
 import React from 'react';
-import { ClerkLoaded, ClerkProvider, useAuth } from '@clerk/clerk-expo';
-import { Drawer } from 'expo-router/drawer';
+import { ClerkProvider, useAuth, useClerk } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
-
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ImagePickerComponent from './(app)/home/camera';
 import { Ionicons } from '@expo/vector-icons';
-import { View,Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Image, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SupabaseProvider } from '@/context/SupabaseContext';
 import Colors from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import login from './(auth)/auth';
+import Home from './(app)/home/home';
+import { FullWindowOverlay } from 'react-native-screens';
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string;
 
 if (!publishableKey) {
-  throw new Error(
-    'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env',
-  )
+  throw new Error('Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env');
 }
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
 
+export { ErrorBoundary } from 'expo-router';
 
-
-/* export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-}; */
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const tokenCache = {
@@ -80,14 +66,34 @@ export default function RootLayout() {
   }
 
   return (
-    
-      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <SupabaseProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <RootLayoutNav />
-          </GestureHandlerRootView>
-        </SupabaseProvider>
-      </ClerkProvider>
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <SupabaseProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <RootLayoutNav />
+        </GestureHandlerRootView>
+      </SupabaseProvider>
+    </ClerkProvider>
+  );
+}
+
+
+function CustomDrawerContent(props: any) {
+  const { signOut, user } = useClerk();
+
+  return (
+    <DrawerContentScrollView {...props}>
+      <View style={{ alignItems: 'center', padding: 20 }}>
+        <Image source={{ uri: user?.imageUrl }} style={{ width: 80, height: 80, borderRadius: 40 }} />
+        <Text style={{ marginTop: 10, fontSize: 16 }}>{user?.fullName}</Text>
+        <Text style={{ color: 'gray' }}>{user?.emailAddresses[0].emailAddress}</Text>
+      </View>
+      <DrawerItemList {...props} />
+      <DrawerItem
+        label="Logout"
+        onPress={() => signOut()}
+        style={{ marginTop: 'auto', marginBottom: 20 }}
+      />
+    </DrawerContentScrollView>
   );
 }
 
@@ -98,8 +104,6 @@ function RootLayoutNav() {
   const segments = useSegments();
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
-
-  
 
   useEffect(() => {
     async function checkOnboarding() {
@@ -119,18 +123,22 @@ function RootLayoutNav() {
     }
   }, [isLoaded]);
 
-  if (!isLoaded || !hasCheckedOnboarding) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
+  // Ensure Slot is rendered to avoid the "navigate before mounting" error
+  const DrawerNavigator = createDrawerNavigator();
 
   return (
     <ThemeProvider value={colorScheme === 'light' ? DefaultTheme : DefaultTheme}>
-      
-      <Slot />
+       <DrawerNavigator.Navigator drawerContent={(props) => <CustomDrawerContent {...props} />}>
+          <DrawerNavigator.Screen name="index" component={Slot} options={{ headerShown: false }} />
+          <DrawerNavigator.Screen name="(auth)/login" component={login} options={{
+            headerStyle:{height: 'auto'},
+            swipeEnabled: false, drawerItemStyle: { display: 'none' } }} />
+          <DrawerNavigator.Screen name="(app)/home" component={Home} 
+          options={{
+            headerStyle:{height: 'auto'},
+            swipeEnabled: false, drawerItemStyle: { display: 'none' } }}/>
+          
+        </DrawerNavigator.Navigator>
     </ThemeProvider>
   );
 }

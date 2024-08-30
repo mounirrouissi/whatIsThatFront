@@ -44,16 +44,12 @@ export default function ObservationDetail() {
         removeClippedSubviews={false}
         contentContainerStyle={{ width, height: BACKDROP_HEIGHT }}
         renderItem={({ item, index }) => {
-          const translateX = scrollX.interpolate({
-            inputRange: [(index - 1) * ITEM_SIZE, index * ITEM_SIZE],
-            outputRange: [0, width],
-          });
+          
           return (
             <Animated.View
               removeClippedSubviews={false}
               style={{
                 position: 'absolute',
-                width: translateX,
                 height,
                 overflow: 'hidden',
               }}
@@ -108,11 +104,7 @@ export default function ObservationDetail() {
             index * ITEM_SIZE,
             (index + 1) * ITEM_SIZE,
           ];
-          const translateY = scrollX.interpolate({
-            inputRange,
-            outputRange: [100, 50, 100],
-            extrapolate: 'clamp',
-          });
+          
 
           return (
             <View style={{ width: ITEM_SIZE }}>
@@ -121,7 +113,6 @@ export default function ObservationDetail() {
                   marginHorizontal: SPACING,
                   padding: SPACING * 2,
                   alignItems: 'center',
-                  transform: [{ translateY }],
                   backgroundColor: 'white',
                   borderRadius: 34,
                 }}

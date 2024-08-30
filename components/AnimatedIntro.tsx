@@ -1,8 +1,6 @@
-import Colors from '@/constants/Colors';
-import { memo } from 'react';
-import { StyleSheet, useWindowDimensions, Text } from 'react-native';
+import React, { memo } from 'react';
+import { StyleSheet, useWindowDimensions, View, SafeAreaView } from 'react-native';
 import Animated, {
-  interpolate,
   interpolateColor,
   useAnimatedReaction,
   useAnimatedStyle,
@@ -12,61 +10,62 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { ReText } from 'react-native-redash';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 const content = [
   {
     title: "Identify Animals",
-    bg: Colors.lime,
-    fontColor: Colors.pink,
-    emoji: "🐾",
+    bg: '#FF6B6B',
+    fontColor: '#FFFFFF',
+    icon: 'paw',
   },
   {
     title: "Identify Plants",
-    bg: Colors.brown,
-    fontColor: Colors.sky,
-    emoji: "🌿",
+    bg: '#4ECDC4',
+    fontColor: '#FFFFFF',
+    icon: 'leaf',
   },
   {
     title: "Identify Bugs",
-    bg: Colors.orange,
-    fontColor: Colors.blue,
-    emoji: "🐞",
+    bg: '#45B7D1',
+    fontColor: '#FFFFFF',
+    icon: 'bug',
   },
   {
     title: "Identify Mushrooms",
-    bg: Colors.teal,
-    fontColor: Colors.yellow,
-    emoji: "🍄",
+    bg: '#F7B731',
+    fontColor: '#FFFFFF',
+    icon: 'seedling',
   },
   {
     title: "Identify Coins",
-    bg: Colors.green,
-    fontColor: Colors.pink,
-    emoji: "💰",
+    bg: '#5D5D5D',
+    fontColor: '#FFFFFF',
+    icon: 'coins',
   },
   {
     title: "Identify Stones",
-    bg: Colors.purple,
-    fontColor: Colors.orange,
-    emoji: "🪨",
+    bg: '#A67C52',
+    fontColor: '#FFFFFF',
+    icon: 'gem',
   },
   {
     title: "Identify Birds",
-    bg: Colors.red,
-    fontColor: Colors.orange,
-    emoji: "🐦",
+    bg: '#26A65B',
+    fontColor: '#FFFFFF',
+    icon: 'dove',
   },
   {
     title: "And More...",
-    bg: Colors.blue,
-    fontColor: Colors.black,
-    emoji: "✨",
+    bg: '#3498DB',
+    fontColor: '#FFFFFF',
+    icon: 'ellipsis-h',
   },
 ];
 
 const AnimatedIntro = () => {
-  const { width } = useWindowDimensions();
-  const ballWidth = 34;
+  const { width, height } = useWindowDimensions();
+  const ballWidth = 60;
   const half = width / 2 - ballWidth / 2;
 
   const currentX = useSharedValue(half);
@@ -74,7 +73,6 @@ const AnimatedIntro = () => {
   const isAtStart = useSharedValue(true);
   const labelWidth = useSharedValue(0);
   const canGoToNext = useSharedValue(false);
-  const didPlay = useSharedValue(false);
 
   const newColorIndex = useDerivedValue(() => {
     if (!isAtStart.value) {
@@ -93,15 +91,11 @@ const AnimatedIntro = () => {
       ),
       transform: [
         {
-          translateX: interpolate(
-            currentX.value,
-            [half, half + labelWidth.value / 2],
-            [half + 4, half - labelWidth.value / 2]
-          ),
+          translateX: half + 4,
         },
       ],
     };
-  }, [currentIndex, currentX]);
+  }, [currentIndex, currentX, labelWidth]);
 
   const ballStyle = useAnimatedStyle(() => {
     return {
@@ -113,67 +107,47 @@ const AnimatedIntro = () => {
       ),
       transform: [{ translateX: currentX.value }],
     };
-  });
+  }, [currentIndex, currentX, labelWidth]);
 
-  const mask = useAnimatedStyle(
-    () => ({
-      backgroundColor: interpolateColor(
-        currentX.value,
-        [half, half + labelWidth.value / 2],
-        [content[newColorIndex.value].bg, content[currentIndex.value].bg],
-        'RGB'
-      ),
-      transform: [{ translateX: currentX.value }],
-      width: width / 1.5,
-      borderTopLeftRadius: 20,
-      borderBottomLeftRadius: 20,
-    }),
-    [currentIndex, currentX, labelWidth]
-  );
-
-  const style1 = useAnimatedStyle(() => ({
+  const backgroundStyle = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       currentX.value,
       [half, half + labelWidth.value / 2],
       [content[newColorIndex.value].bg, content[currentIndex.value].bg],
       'RGB'
     ),
-    opacity: interpolate(1, [1, 0], [1, 0, 0, 0, 0, 0, 0]),
-    transform: [
-      {
-        translateX: interpolate(1, [1, 0], [0, -width * 2, -width, -width, -width, -width, -width]),
-      },
-    ],
-  }));
+  }), [currentIndex, currentX, labelWidth]);
 
   const text = useDerivedValue(() => {
     const index = currentIndex.value;
     return content[index].title;
   }, [currentIndex]);
 
-  const emoji = useDerivedValue(() => {
+  const icon = useDerivedValue(() => {
     const index = currentIndex.value;
-    return content[index].emoji;
+    return content[index].icon;
   }, [currentIndex]);
 
   useAnimatedReaction(
     () => labelWidth.value,
     (newWidth) => {
-      currentX.value = withDelay(
-        1000,
-        withTiming(
-          half + newWidth / 2,
-          {
-            duration: 800,
-          },
-          (finished) => {
-            if (finished) {
-              canGoToNext.value = true;
-              isAtStart.value = false;
+      if (newWidth > 0) {
+        currentX.value = withDelay(
+          1000,
+          withTiming(
+            half + newWidth / 2,
+            {
+              duration: 800,
+            },
+            (finished) => {
+              if (finished) {
+                canGoToNext.value = true;
+                isAtStart.value = false;
+              }
             }
-          }
-        )
-      );
+          )
+        );
+      }
     },
     [labelWidth, currentX, half]
   );
@@ -194,7 +168,6 @@ const AnimatedIntro = () => {
               if (finished) {
                 currentIndex.value = (currentIndex.value + 1) % content.length;
                 isAtStart.value = true;
-                didPlay.value = false;
               }
             }
           )
@@ -204,61 +177,62 @@ const AnimatedIntro = () => {
     [currentX, labelWidth]
   );
 
+  const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome5);
+
   return (
-    <Animated.View style={[styles.wrapper, style1]}>
-      <Animated.View style={[styles.content]}>
-        <Animated.View style={[styles.ball, ballStyle]} />
-        <Animated.View style={[styles.mask, mask]} />
-        <ReText
-          onLayout={(e) => {
-            labelWidth.value = e.nativeEvent.layout.width + 4;
-          }}
-          style={[styles.title, textStyle]}
-          text={text}
-        />
-        <Animated.Text style={styles.emoji}>
-          {emoji.value}
-        </Animated.Text>
+    <SafeAreaView style={styles.safeArea}>
+      <Animated.View style={[styles.wrapper, backgroundStyle]}>
+        <View style={styles.container}>
+          <Animated.View style={[styles.content, {alignItems: 'center', justifyContent: 'center'}]}>
+            <Animated.View style={[styles.ball, ballStyle, {position: 'relative'}]}>
+              <AnimatedIcon name={icon} size={30} color={content[currentIndex.value].bg} />
+            </Animated.View>
+            <ReText
+              onLayout={(e) => {
+                labelWidth.value = e.nativeEvent.layout.width + 4;
+              }}
+              style={[styles.title, textStyle, {position: 'relative'}]}
+              text={text}
+            />
+          </Animated.View>
+        </View>
       </Animated.View>
-    </Animated.View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 0.5, 
+
+  },
   wrapper: {
     flex: 1,
   },
-  mask: {
-    zIndex: 1,
-    position: 'absolute',
-    left: '0%',
-    height: 44,
+  container: {
+    flex: 1,
+  
+    justifyContent: 'center',
   },
   ball: {
-    width: 40,
-    zIndex: 10,
-    height: 40,
-    backgroundColor: '#000',
-    borderRadius: 20,
-    position: 'absolute',
-    left: '0%',
-  },
-  titleText: {
-    flexDirection: 'row',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 36,
-    fontWeight: '600',
-    left: '0%',
-    position: 'absolute',
+    fontSize: 32,
+    fontWeight: '700',
   },
   content: {
-    marginTop: 300,
-  },
-  emoji: {
-    fontSize: 100,
-    marginBottom: 20,
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

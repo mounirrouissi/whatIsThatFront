@@ -1,139 +1,73 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
-import { View, Text, Image, StyleSheet, Dimensions, Animated, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import CustomButton from "../../components/CustomButton";
-import Colors from "@/constants/Colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { images } from '@/constants';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions, TouchableOpacity, SafeAreaView } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
-const { width, height } = Dimensions.get('window');
-const ITEM_WIDTH = width * 0.9;
-const ITEM_HEIGHT = height * 0.5;
+const onboarding = () => {
+  const { width, height } = useWindowDimensions();
+  const [currentPage, setCurrentPage] = useState(0);
+  const translateX = useSharedValue(0);
+  const router = useRouter();
 
-const onboardingData = [
-  {
-    image: images.natureCollage,
-    title: "Discover Nature's\nWonders with NatureID",
-    description: "Explore and Identify Plants, Animals, Bugs, and More: Your Personal Guide to the Natural World",
-    backgroundColor: '#0A3D0A',
-  },
-  {
-    image: images.leafPath,
-    title: "Identify Plants\nwith Ease",
-    description: "Snap a photo and get instant identification of plants, trees, and flowers in your surroundings",
-    backgroundColor: '#1A5E1A',
-  },
-];
+  const pages = [
+    { title: 'Identify Plants', icon: 'leaf', color: ['#43C6AC', '#191654'] },
+    { title: 'Discover Animals', icon: 'paw', color: ['#FFD194', '#D1913C'] },
+    { title: 'Explore Bugs', icon: 'bug', color: ['#F7971E', '#FFD200'] },
+    { title: 'Learn about Mushrooms', icon: 'seedling', color: ['#1D4350', '#A43931'] },
+  ];
 
-const Onboarding = () => {
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showButton, setShowButton] = useState(false);
-  const flatListRef = useRef(null);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (currentIndex < onboardingData.length - 1) {
-        flatListRef.current.scrollToIndex({ index: currentIndex + 1, animated: true });
-      } else {
-        flatListRef.current.scrollToIndex({ index: 0, animated: true });
-      }
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, [currentIndex]);
-
-  const renderItem = ({ item, index }) => {
-    const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-    const scale = scrollX.interpolate({
-      inputRange,
-      outputRange: [0.8, 1, 0.8],
-    });
-
-    return (
-      <Animated.View style={[styles.itemContainer, { backgroundColor: item.backgroundColor }]}>
-        <Animated.Image
-          source={item.image}
-          style={[styles.image, { transform: [{ scale }] }]}
-          resizeMode="cover"
-        />
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </Animated.View>
-    );
+  const nextPage = () => {
+    if (currentPage < pages.length - 1) {
+      setCurrentPage(currentPage + 1);
+      translateX.value = withTiming(-width * (currentPage + 1), {
+        duration: 300,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    } else {
+      router.push('(auth)/login');
+    }
   };
 
-  const renderDots = () => {
-    return (
-      <View style={styles.dotsContainer}>
-        {onboardingData.map((_, index) => {
-          const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-          const scale = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.8, 1.4, 0.8],
-            extrapolate: 'clamp',
-          });
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.6, 1, 0.6],
-            extrapolate: 'clamp',
-          });
-          return (
-            <Animated.View
-              key={index}
-              style={[styles.dot, { transform: [{ scale }], opacity }]}
-            />
-          );
-        })}
-      </View>
-    );
-  };
+  const slideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#0A3D0A" style="light" />
-      
-      <Animated.FlatList
-        ref={flatListRef}
-        data={onboardingData}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => index.toString()}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true }
-        )}
-        onMomentumScrollEnd={(event) => {
-          const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-          setCurrentIndex(newIndex);
-        }}
-      />
-
-      {renderDots()}
-
-      <View style={styles.footer}>
-        <Image source={images.logo} style={styles.logo} resizeMode="contain" />
-        <TouchableOpacity 
-          style={styles.arrowButton}
-          onPress={() => setShowButton(true)}
-        >
-          <Ionicons name="arrow-forward-circle" size={60} color="white" />
+      <Animated.View style={[styles.slideContainer, slideStyle, { width: width * pages.length }]}>
+        {pages.map((page, index) => (
+          <LinearGradient key={index} colors={page.color} style={[styles.slide, { width, height }]}>
+            <View style={styles.contentContainer}>
+              <View style={styles.iconContainer}>
+                <FontAwesome5 name={page.icon} size={64} color="white" />
+              </View>
+              <Text style={styles.title}>{page.title}</Text>
+              <Text style={styles.description}>
+                Discover and learn about various {page.title.toLowerCase()} in your surroundings.
+              </Text>
+            </View>
+          </LinearGradient>
+        ))}
+      </Animated.View>
+      <View style={styles.bottomContainer}>
+        <View style={styles.pagination}>
+          {pages.map((_, index) => (
+            <Animated.View
+              key={index}
+              style={[
+                styles.paginationDot,
+                index === currentPage && styles.paginationDotActive,
+              ]}
+            />
+          ))}
+        </View>
+        <TouchableOpacity onPress={nextPage} style={styles.nextButton}>
+          <Text style={styles.nextButtonText}>
+            {currentPage < pages.length - 1 ? 'Next' : 'Get Started'}
+          </Text>
         </TouchableOpacity>
-        {showButton && (
-          <CustomButton
-            title="Start Exploring"
-            containerStyles={styles.button}
-            handlePress={async () => {
-              await AsyncStorage.setItem('onboardingStatus', 'true');
-              router.replace('/(auth)/auth');
-            }}
-          />
-        )}
       </View>
     </SafeAreaView>
   );
@@ -142,88 +76,88 @@ const Onboarding = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A3D0A',
+    backgroundColor: '#fff',
   },
-  itemContainer: {
-    width,
+  slideContainer: {
+    flexDirection: 'row',
+  },
+  slide: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    padding: 20,
   },
-  image: {
-    width: ITEM_WIDTH,
-    height: ITEM_HEIGHT,
-    borderRadius: 30,
+  contentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: 400,
+  },
+  iconContainer: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 40,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   title: {
-    fontSize: 32,
-    color: 'white',
+    fontSize: 36,
     fontWeight: 'bold',
-    textAlign: 'center',
     marginBottom: 20,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
+    textAlign: 'center',
+    color: '#fff',
   },
   description: {
-    fontSize: 18,
-    color: '#e5e5e5',
+    fontSize: 20,
     textAlign: 'center',
+    color: '#fff',
+    lineHeight: 28,
     paddingHorizontal: 20,
-    lineHeight: 24,
   },
-  footer: {
+  bottomContainer: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 40,
     left: 0,
     right: 0,
     alignItems: 'center',
   },
-  logo: {
-    width: 180,
-    height: 120,
+  pagination: {
+    flexDirection: 'row',
     marginBottom: 30,
   },
-  arrowButton: {
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: Colors.secondary,
-    width: '80%',
-    paddingVertical: 18,
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 220,
-    width: '100%',
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: 'white',
+  paginationDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
     marginHorizontal: 8,
+  },
+  paginationDotActive: {
+    backgroundColor: '#fff',
+    transform: [{ scale: 1.2 }],
+  },
+  nextButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 30,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  nextButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });
 
-export default Onboarding;
+export default onboarding;

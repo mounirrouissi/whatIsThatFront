@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSupabase } from '@/context/SupabaseContext';
@@ -29,23 +29,20 @@ const SkeletonItem = () => {
     ).start();
   }, []);
 
-  const backgroundColor = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['#E0E0E0', '#F5F5F5'],
-  });
+
 
   return (
     <View style={styles.item}>
-      <Animated.View style={[styles.itemImage, { backgroundColor }]} />
+      <Animated.View style={[styles.itemImage]} />
       <View style={styles.itemContent}>
-        <Animated.View style={[styles.skeletonLine, { width: '70%', backgroundColor }]} />
-        <Animated.View style={[styles.skeletonLine, { width: '40%', backgroundColor }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '70%', backgroundColor: '#f2f2f2' }]} />
+        <Animated.View style={[styles.skeletonLine, { width: '40%', backgroundColor: '#f2f2f2' }]} />
       </View>
     </View>
   );
 };
 
-export default function TabOneScreen() {
+export default function Home() {
   const [identifications, setIdentifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const { getIdentifications, userId, getUserById } = useSupabase();
@@ -54,6 +51,7 @@ export default function TabOneScreen() {
   const [sharedElementAnimation] = useState(new Animated.Value(0));
   const [selectedIdentification, setSelectedIdentification] = useState(null);
   const [user, setUser] = useState(null);
+  const selectedItemRef = useRef(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -93,6 +91,7 @@ export default function TabOneScreen() {
   const renderItem = ({ item }: { item: any }) => {
     const handlePress = () => {
       setSelectedIdentification(item);
+      selectedItemRef.current = item;
       Animated.timing(sharedElementAnimation, {
         toValue: 1,
         duration: 300,
@@ -111,7 +110,7 @@ export default function TabOneScreen() {
                 {
                   scale: sharedElementAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [1, 1.2],
+                    outputRange: [1, selectedIdentification === item ? 1.1 : 1],
                   }),
                 },
               ],
@@ -125,7 +124,6 @@ export default function TabOneScreen() {
       </TouchableOpacity>
     );
   };
-
   const renderSkeletonList = () => (
     <FlatList
       data={[...Array(5)]}
@@ -182,7 +180,13 @@ export default function TabOneScreen() {
                 {
                   scale: sharedElementAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0.5, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                },
+                {
+                  translateY: sharedElementAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [50, 0],
                   }),
                 },
               ],
@@ -198,17 +202,32 @@ export default function TabOneScreen() {
                   {
                     scale: sharedElementAnimation.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0.5, 1],
+                      outputRange: [0.8, 1],
                     }),
                   },
                 ],
               },
             ]}
           />
-          <View style={styles.userInfo}>
+          <Animated.View 
+            style={[
+              styles.userInfo,
+              {
+                opacity: sharedElementAnimation,
+                transform: [
+                  {
+                    translateY: sharedElementAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
             <Text style={styles.userName}>{user?.full_name}</Text>
             <Text style={styles.userIdentifiedDate}>Identified at: {new Date(selectedIdentification.identified_at).toLocaleString()}</Text>
-          </View>
+          </Animated.View>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => {
