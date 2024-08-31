@@ -3,7 +3,7 @@ import React from 'react'
 import AnimatedIntro from '@/components/AnimatedIntro'
 import BottomLoginSheet from '@/components/BottomLoginSheet'
 
-const login = () => {
+const Login = () => {
   return (
     <SafeAreaView style={styles.container}>
         <AnimatedIntro/>
@@ -19,4 +19,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-export default login
+export default Login

@@ -18,9 +18,11 @@ import Colors from '@/constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import login from './(auth)/auth';
+import Login from './(auth)/auth';
 import Home from './(app)/home/home';
 import { FullWindowOverlay } from 'react-native-screens';
+import { Stack } from 'expo-router';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string;
 
@@ -105,6 +107,7 @@ function RootLayoutNav() {
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = React.useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState(false);
 
+
   useEffect(() => {
     async function checkOnboarding() {
       const status = await AsyncStorage.getItem('onboardingStatus');
@@ -124,25 +127,33 @@ function RootLayoutNav() {
   }, [isLoaded]);
 
   // Ensure Slot is rendered to avoid the "navigate before mounting" error
-  const DrawerNavigator = createDrawerNavigator();
+
+  const Drawer = createDrawerNavigator();
+  const Stack = createNativeStackNavigator();
 
   return (
     <ThemeProvider value={colorScheme === 'light' ? DefaultTheme : DefaultTheme}>
-       <DrawerNavigator.Navigator drawerContent={(props) => <CustomDrawerContent {...props} />}>
-          <DrawerNavigator.Screen name="index" component={Slot} options={{ headerShown: false }} />
-          <DrawerNavigator.Screen name="(auth)/login" component={login} options={{
-            headerStyle:{height: 'auto'},
-            swipeEnabled: false, drawerItemStyle: { display: 'none' } }} />
-          <DrawerNavigator.Screen name="(app)/home" component={Home} 
-          options={{
-            headerStyle:{height: 'auto'},
-            swipeEnabled: false, drawerItemStyle: { display: 'none' } }}/>
-          
-        </DrawerNavigator.Navigator>
+      {isSignedIn ? (
+        <Drawer.Navigator drawerContent={(props) => <CustomDrawerContent {...props} />}>
+          <Drawer.Screen name="(app)" component={Home} 
+            options={{
+              headerStyle:{height: 'auto'},
+            }}
+          />
+        </Drawer.Navigator>
+      ) : (
+        <Stack.Navigator>
+          <Stack.Screen 
+            name="(auth)/login" 
+            component={Login} 
+            options={{ headerShown: false }}
+          />
+        </Stack.Navigator>
+      )}
     </ThemeProvider>
   );
-}
 
+}
 const styles = StyleSheet.create({
   cameraButton: {
     top: -20,
