@@ -30,7 +30,7 @@ import primary from "@/constants/Colors";
       >
         <Text
           style={{
-            fontFamily: "outfit-bold",
+            fontFamily: "oPoppins-bold",
             fontSize: 20,
           }}
         >
@@ -62,7 +62,7 @@ import primary from "@/constants/Colors";
           >
             <Text
               style={{
-                fontFamily: "outfit",
+                fontFamily: "oPoppins",
                 color: "#fff",
                 textAlign: "center",
               }}
@@ -102,7 +102,7 @@ import primary from "@/constants/Colors";
                   gap: 5,
                 }}
               >
-                <Text style={{ fontFamily: "outfit-medium" }}>
+                <Text style={{ fontFamily: "oPoppins-medium" }}>
                   {item.userName}
                 </Text>
                 

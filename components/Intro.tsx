@@ -45,16 +45,19 @@ import {
     
         try {
           if (isFavorite) {
+            setIsFavorite(!isFavorite);
             await removeFavorite(user.id, business.id);
           } else {
-
+            setIsFavorite(!isFavorite);
 
             await addFavorite(user.id, business.id);
           }
-          setIsFavorite(!isFavorite);
         } catch (error) {
+
           console.error('Error toggling favorite:', error);
           Alert.alert('Error', 'Failed to update favorite status');
+          setIsFavorite(!isFavorite);
+
         }
       };
     
@@ -262,12 +265,12 @@ import {
     },
     businessName: {
       fontSize: 24,
-      fontFamily: "outfit-bold",
+      fontFamily: "oPoppins-bold",
       color: '#333',
     },
     businessAddress: {
       fontSize: 16,
-      fontFamily: "outfit",
+      fontFamily: "oPoppins",
       color: '#666',
       marginTop: 5,
     },

@@ -13,30 +13,40 @@ import { IconObject } from "@/app/types";
 export default function RecentFileCard({ iconObject }: { iconObject: IconObject }) {
   const router = useRouter();
   const theme = useColorScheme();
-  
+
   const handlePress = () => {
-    console.log("pressed");
+    console.log("pressed"+iconObject.name);
     router.push({
         pathname: '/(app)/EncyclopediaEntries',
-        params: { someParam: iconObject.name }
+        params: { categoryName: iconObject.name }
       });
   };
+
   return (
     <Animated.View
       layout={LinearTransition}
       entering={SlideInLeft}
       exiting={SlideOutLeft}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme === 'dark' ? '#1E1E1E' : '#F5F5F5' }]}
     >
       <TouchableOpacity style={styles.touchable} onPress={handlePress}>
         <LinearGradient
-          colors={["#007bff", "#00bfff"]}
+          colors={["#4A90E2", "#50E3C2"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.gradient}
         >
-          <MaterialCommunityIcons name={iconObject.icon} size={40} color="white" style={styles.icon} />
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons
+              name={iconObject.icon}
+              size={56}
+              color="white"
+              style={styles.icon}
+            />
+          </View>
         </LinearGradient>
-        <View style={styles.textContainer}>
-          <Text style={styles.title} numberOfLines={2}>
+        <View style={[styles.textContainer, { backgroundColor: theme === 'dark' ? '#2C2C2C' : '#FFFFFF' }]}>
+          <Text style={[styles.title, { color: theme === 'dark' ? '#FFFFFF' : '#333333' }]}>
             {iconObject.name}
           </Text>
         </View>
@@ -45,53 +55,53 @@ export default function RecentFileCard({ iconObject }: { iconObject: IconObject 
   );
 }
 
-  
 const styles = StyleSheet.create({
-    container: {
-      width: 160,
-      height: 200,
-      borderRadius: 22, // slightly rounded corners for modern look
-      backgroundColor: 'white',
-      shadowColor: "#000",
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.25, // reduced shadow opacity for a softer effect
-      shadowRadius: 5.5,
-      elevation: 9,
-      overflow: 'hidden',
-      margin: 10, // balanced margin for layout symmetry
-      transform: [{ scale: 1 }], // initial scale
+  container: {
+    width: 200,
+    height: 240,
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 6,
     },
-    touchable: {
-      flex: 1,
-      activeOpacity: 0.8, // reduces opacity on press for better feedback
-    },
-    gradient: {
-      height: 120,
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative', // relative positioning for overlay
-    },
-    icon: {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      borderRadius: 22,
-      padding: 12,
-      position: 'absolute',
-      zIndex: 1, // elevate icon above overlay
-    },
-    textContainer: {
-      flex: 1,
-      padding: 18, // adjusted padding for better content balance
-      justifyContent: 'center',
-    },
-    title: {
-      fontWeight: "700",
-      fontSize: 18,
-      textAlign: 'center',
-      color: '#333',
-      letterSpacing: 0.5, // adds letter spacing for a polished text appearance
-    },
-  });
-  
+    shadowOpacity: 0.2,
+    shadowRadius: 7,
+    elevation: 10,
+    overflow: 'hidden',
+    margin: 15,
+    transform: [{ scale: 1 }],
+  },
+  touchable: {
+    flex: 1,
+    activeOpacity: 0.7,
+  },
+  gradient: {
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+  },
+  iconContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 30,
+    padding: 20,
+  },
+  icon: {
+    zIndex: 1,
+  },
+  textContainer: {
+    flex: 1,
+    padding: 22,
+    justifyContent: 'center',
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+  },
+  title: {
+    fontWeight: "700",
+    fontSize: 22,
+    textAlign: 'center',
+    letterSpacing: 0.7,
+  },
+});

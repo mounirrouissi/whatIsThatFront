@@ -9,7 +9,7 @@ import { Identification, IdentificationResponse } from '../../types';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { client as supabase } from '@/utils/supabaseClient';
 import { useSupabase } from '@/context/SupabaseContext';
-import BackButton from '@/components/BackButton';
+import { BackButton } from '@/components/BackButton';
 import { useNavigation, useRouter, useSegments } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Swiper from 'react-native-deck-swiper';
@@ -516,6 +516,5 @@ const styles = StyleSheet.create({
 });
 
 export default camera;
-
 
 

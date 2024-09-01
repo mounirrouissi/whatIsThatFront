@@ -3,25 +3,6 @@ export default {
   secondary: '#2196F3',  // Blue for sky/water
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   accent: '#FF4081',     // Vibrant pink accent
   background: '#FAFAFA', // Light background
   surface: '#FFFFFF',    // White surface

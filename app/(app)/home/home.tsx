@@ -254,6 +254,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     paddingTop: 20,
+    backgroundColor: '#121212', 
   },
   header: {
     alignItems: 'baseline',
@@ -266,6 +267,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#FFFFFF',
     paddingHorizontal: 16,
+    fontFamily: 'PoppinsBold', // Apply Poppins font here
   },
   list: {
     width: '100%',
@@ -279,6 +281,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 10,
     marginHorizontal: 16,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84, 
   },
   itemImage: {
     width: 60,
@@ -294,10 +301,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    fontFamily: 'PoppinsBold', // Apply Poppins font here
   },
   itemDate: {
     fontSize: 14,
     color: '#CCCCCC',
+    fontFamily: 'PoppinsBold', // Apply Poppins font here
   },
   skeletonLine: {
     height: 20,
@@ -326,6 +335,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 18,
+    fontFamily: 'PoppinsBold', // Apply Poppins font here
   },
   closeButton: {
     position: 'absolute',
@@ -344,5 +354,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     marginTop: 10,
+    fontFamily: 'PoppinsBold', // Apply Poppins font here
   },
 });

@@ -1,21 +1,21 @@
 import { View, Text, FlatList, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import EncyclopediaCard from "@/components/EncyclopediaCard";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useGlobalSearchParams, useLocalSearchParams } from "expo-router";
 import { useSupabase} from '@/context/SupabaseContext'; // Adjust the import path as needed
 import { EncyclopediaEntry } from "../types";
 
 export default function EncyclopediaList() {
-  const { someParam } = useLocalSearchParams();
+  const { categoryName } = useGlobalSearchParams();
   const {fetchEncyclopediaEntriesByCategory} = useSupabase(); // Adjust the import path as needed
   const [businessList, setBusinessList] = useState<any[]>([]);
-console.log("someParam", someParam +"");  
+console.log("someParam", categoryName +"");  
   useEffect(() => {
     const fetchData = async () => {
       console.log("fetching data");
       try {
         if (fetchEncyclopediaEntriesByCategory) {
-          const data:EncyclopediaEntry[] = await fetchEncyclopediaEntriesByCategory(someParam as string); // Replace 'Animals' with your desired category
+          const data:EncyclopediaEntry[] = await fetchEncyclopediaEntriesByCategory(categoryName as string); // Replace 'Animals' with your desired category
           console.log("entries are ", data);
           const formattedData = data.map((item: EncyclopediaEntry, index: number) => ({
             id: item.id,

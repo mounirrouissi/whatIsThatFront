@@ -108,9 +108,13 @@ console.log("userExistsButNeedsToSignIn", userExistsButNeedsToSignIn)
     });
   };
 
+
+
+
+ 
   return (
-    <View style={[styles.container, { paddingBottom: bottom }]}>
-      <Text style={styles.title}>Welcome</Text>
+    <View style={[styles.LoginContainer, { paddingBottom: bottom }]}>
+      <Text style={styles.LoginTitle}>Welcome</Text>
       <Text style={styles.subtitle}>Choose a login method to continue</Text>
       
       <TouchableOpacity 
@@ -141,7 +145,7 @@ console.log("userExistsButNeedsToSignIn", userExistsButNeedsToSignIn)
   );
 };
 const styles = StyleSheet.create({
-  container: {
+  LoginContainer: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
@@ -151,7 +155,7 @@ const styles = StyleSheet.create({
     padding: 26,
     gap: 16,
   },
-  title: {
+  LoginTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
