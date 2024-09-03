@@ -10,7 +10,6 @@ import Home from './home';
 import camera from './camera';
 import Observations from './Observations';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
@@ -23,40 +22,42 @@ export default function TabLayout() {
   return (
     <Tab.Navigator
       screenOptions={{
-        
         tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: '#888',
         tabBarLabelStyle: {
-          fontFamily: 'Poppins', // Apply Poppins font here
-          fontSize: 12, 
+          fontFamily: 'Poppins',
+          fontSize: 12,
+          fontWeight: '600',
         },
         tabBarStyle: { 
-          backgroundColor: '#121212', // Dark background for tab bar
-          height: 60, // Set the height of the tab bar
+          backgroundColor: '#121212',
+          height: 60,
+          borderTopWidth: 0,
+          elevation: 8,
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
         },
       }}
     >
-      
       <Tab.Screen
         name="home"
         component={Home}
         options={{
           tabBarLabel: "Home",
           tabBarIcon: ({ focused, color }) => (
-            <Ionicons name="earth" size={24} color={focused ? Colors.primary : color} />
+            <Ionicons name="home" size={24} color={focused ? Colors.primary : color} />
           ),
           title: "Home",
           headerShown: false,
         }}
       />
       
-    
-
-        <Tab.Screen
+      <Tab.Screen
         name="camera"
         component={camera}
         options={({ navigation }) => ({
-          tabBarLabel: 'Identify That Thing',
-          tabBarLabelStyle: { display:'none', fontFamily: 'Poppins', fontSize: 12,flex: 1, alignItems: 'center', justifyContent: 'center' },
+          tabBarLabel: 'Identify',
+          tabBarLabelStyle: { display: 'none' },
           headerShown: false,
           tabBarStyle: { display: 'none' },
           
@@ -67,15 +68,31 @@ export default function TabLayout() {
             />
           ),
           tabBarIcon: ({ focused, color }) => (
-            <View style={{ position: 'absolute', top: -20, alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{ backgroundColor: "green", borderRadius: 30, padding: 10 }}>
-                <Ionicons name="camera" size={24} color={focused ? Colors.primary : "white"} />
-              </View>
+            <View style={{ 
+              position: 'absolute', 
+              bottom: 0, 
+              height: 68, 
+              width: 68, 
+              borderRadius: 34, 
+              backgroundColor: Colors.primary,
+              justifyContent: 'center',
+              alignItems: 'center',
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 5,
+            }}>
+              <Ionicons name="camera" size={32} color="white" />
             </View>
           ),
         })}
       />
-       <Tab.Screen
+
+      <Tab.Screen
         name="Observations"
         component={Observations}
         options={{
@@ -85,7 +102,6 @@ export default function TabLayout() {
           ),
           title: "Observations",
           headerShown: false,
-          tabBarStyle:null,
         }}
       />
     </Tab.Navigator>

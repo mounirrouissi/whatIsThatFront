@@ -1,168 +1,166 @@
 import React, { useEffect, useState } from 'react';
-import { View, Image, Text, ScrollView, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Image, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { useAuth } from '@clerk/clerk-expo';
+import { useRouter } from 'expo-router';
+import Animated, { FadeInRight, Layout } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
 import { client as supabase } from '@/utils/supabaseClient';
 import { useSupabase } from '@/context/SupabaseContext';
-import { useAuth } from '@clerk/clerk-expo';
-import { IdentificationDB } from '../../types';
+import { IdentificationDB, Observation } from '@/app/types';
 import IdentificationDetails from '@/components/IdentificationDetails';
-import { Link, useRouter } from 'expo-router';
-import { Observation } from '@/app/types';
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export const Observations = () => {
-  const categories = ['animal', 'bird', 'plant'];
+  const categories = ['Favorites', 'Animal', 'Bird', 'Plant'];
   const [data, setData] = useState<{ [key: string]: IdentificationDB[] }>({});
-  const [favorites, setFavorites] = useState<IdentificationDB[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { userId } = useAuth();
   const { getFavoritesByUserId } = useSupabase();
   const [selectedIdentification, setSelectedIdentification] = useState<IdentificationDB | null>(null);
   const router = useRouter();
 
+  const fetchData = async () => {
+    try {
+      let fetchedData: { [key: string]: any[] } = {};
+      for (let category of categories.slice(1)) { // Skip 'Favorites'
+        const { data: identifications, error } = await supabase
+          .from('identifications')
+          .select('*')
+          .eq('type', category.toLowerCase())
+          .eq('user_id', userId)
+          .order('identified_at', { ascending: false });
+
+        if (error) throw error;
+        fetchedData[category] = identifications || [];
+      }
+
+      // Fetch favorites
+      const favoriteIds = await getFavoritesByUserId(userId);
+      const favoriteEntries = await supabase
+        .from('encyclopedia_entries')
+        .select('*')
+        .in('id', favoriteIds.map((fav) => fav.encyclopedia_entry_id));
+
+      fetchedData['Favorites'] = favoriteEntries.data || [];
+
+      setData(fetchedData);
+    } catch (error) {
+      console.error('Error fetching data from Supabase:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [userId]);
+
   const handlePress = (observation: Observation) => {
-    console.log("observation", observation);
     router.push({
       pathname: '(modals)/observationDetail',
-      params: { observation: JSON.stringify(observation),
-        category: observation.type // Add this line to pass the category
-
-       },
+      params: { 
+        observation: JSON.stringify(observation),
+        category: observation.type
+      },
     });
   };
-  useEffect(() => {
-    const fetchData = async () => {
-      console.log('Starting to fetch data...');
-      try {
-        let fetchedData: { [key: string]: any[] } = {};
-        for (let category of categories) {
-          console.log(`Fetching data for category: ${category}`);
 
-          const { data: identifications, error } = await supabase
-            .from('identifications')
-            .select('*')
-            .eq('type', category)
-            .eq('user_id', userId)
-            .order('identified_at', { ascending: false });
+  const renderItem = ({ item }: { item: IdentificationDB }) => (
+    <AnimatedTouchableOpacity 
+      style={styles.itemContainer}
+      onPress={() => handlePress(item)}
+      entering={FadeInRight}
+      layout={Layout.springify()}
+    >
+      <LinearGradient
+        colors={['rgba(0,0,0,0.5)', 'transparent']}
+        style={styles.gradient}
+      >
+        <Text style={styles.itemText} numberOfLines={1}>
+          {item.common_name || item.name || 'Unknown'}
+        </Text>
+      </LinearGradient>
+      <Image 
+        source={{ uri: item.image_url }} 
+        style={styles.image}
+      />
+    </AnimatedTouchableOpacity>
+  );
 
-        //   console.log("data: " + JSON.stringify(identifications[0].common_name));
-          if (error) {
-            console.error(`Error fetching data for category ${category}:`, error);
-            throw error;
-          }
-
-          fetchedData[category] = identifications || [];
-        }
-
-        // Fetch favorites
-        const favoriteIds = await getFavoritesByUserId(userId);
-        
-        const favoriteEntries = await supabase
-          .from('encyclopedia_entries')
-          .select('*')
-          .in('id', favoriteIds.map((fav) => fav.encyclopedia_entry_id));
-
-        setFavorites(favoriteEntries.data || []);
-
-        console.log('Data fetching completed.');
-        setData(fetchedData);
-      } catch (error) {
-        console.error('Error fetching data from Supabase:', error);
-      } finally {
-        setLoading(false);
-        console.log('Loading state set to false.');
-      }
-    };
-
-    fetchData();
-  }, [userId, categories]);
-
-  const renderCategory = (category: string) => {
-    const items = data[category] || [];
-    return (
-      <View key={category} style={styles.categoryContainer}>
-        <Text style={styles.categoryTitle}>{category.charAt(0).toUpperCase() + category.slice(1)}</Text>
-        <FlatList
-          data={items}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            item.image_url != null ? (
-             
-              <TouchableOpacity 
-                style={styles.itemContainer}
-                onPress={() => handlePress(item)}
-              >
-                <Image 
-                  source={{ uri: item.image_url }} 
-                  style={styles.image} 
-                />
-                <Text style={styles.itemText} numberOfLines={1}>{item.type || 'Unknown'}</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.itemContainer}>
-                <View style={styles.image} /> 
-                <Text style={styles.itemText}>Loading...</Text> 
-              </View>
-            )
-          )}
-          keyExtractor={(item) => item.id.toString()}
-        />
-      </View>
-    );
-  };
-
-  const renderFavorites = () => (
+  const renderCategory = ({ item: category }: { item: string }) => (
     <View style={styles.categoryContainer}>
-      <Text style={styles.categoryTitle}>Favorites</Text>
+      <View style={styles.categoryHeader}>
+        <Text style={styles.categoryTitle}>{category}</Text>
+        <TouchableOpacity>
+          <Text style={styles.seeAllText}>See All</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
-        data={favorites}
+        data={data[category] || []}
         horizontal
         showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.itemContainer}
-            onPress={() => setSelectedIdentification(item)}
-          >
-            <Image 
-              source={{ uri: item.image_url }} 
-              style={styles.image} 
-            />
-            <Text style={styles.itemText} numberOfLines={1}>{item.name || 'Unknown'}</Text>
-          </TouchableOpacity>
-        )}
+        renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.categoryList}
       />
     </View>
   );
 
   const renderSkeleton = () => (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      {[...Array(4)].map((_, index) => (
-        <View key={index} style={styles.categoryContainer}>
-          <View style={[styles.skeletonText, { width: '40%', height: 24, marginBottom: 12 }]} />
+    <FlatList
+      data={categories}
+      renderItem={() => (
+        <View style={styles.categoryContainer}>
+          <View style={styles.categoryHeader}>
+            <View style={[styles.skeletonText, { width: '40%', height: 24 }]} />
+            <View style={[styles.skeletonText, { width: '20%', height: 18 }]} />
+          </View>
           <FlatList
             data={[...Array(5)]}
             horizontal
             showsHorizontalScrollIndicator={false}
             renderItem={() => (
-              <View style={styles.itemContainer}>
+              <View style={[styles.itemContainer, styles.skeletonItem]}>
                 <View style={[styles.image, styles.skeletonImage]} />
-                <View style={[styles.skeletonText, { width: '80%', height: 16 }]} />
               </View>
             )}
             keyExtractor={(_, index) => index.toString()}
+            contentContainerStyle={styles.categoryList}
           />
         </View>
-      ))}
-    </ScrollView>
+      )}
+      keyExtractor={(item) => item}
+    />
   );
 
   return (
     <View style={styles.container}>
       {loading ? renderSkeleton() : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {renderFavorites()}
-          {categories.map(renderCategory)}
-        </ScrollView>
+        <FlatList
+          data={categories}
+          renderItem={renderCategory}
+          keyExtractor={(item) => item}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>My Observations</Text>
+              <TouchableOpacity style={styles.addButton}>
+                <Ionicons name="add" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => {
+              setRefreshing(true);
+              fetchData();
+            }} />
+          }
+        />
       )}
       {selectedIdentification && (
         <IdentificationDetails 
@@ -177,47 +175,89 @@ export const Observations = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F7FA',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  addButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 20,
+    padding: 8,
   },
   categoryContainer: {
     marginBottom: 24,
   },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
   categoryTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333333',
+    color: '#333',
+  },
+  seeAllText: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: '500',
+  },
+  categoryList: {
+    paddingHorizontal: 16,
   },
   itemContainer: {
-    backgroundColor: '#ffffff',
-    padding: 12,
+    width: 150,
+    height: 200,
     marginRight: 12,
-    borderRadius: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 5,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '100%',
+    zIndex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
   },
   image: {
-    width: 120,
-    height: 120,
-    borderRadius: 8,
-    marginBottom: 8,
+    width: '100%',
+    height: '100%',
   },
   itemText: {
     fontSize: 16,
-    color: '#333333',
-    textAlign: 'center',
-    fontWeight: '500',
+    color: '#fff',
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: {width: -1, height: 1},
+    textShadowRadius: 10,
   },
   skeletonText: {
     backgroundColor: '#E1E9EE',
     borderRadius: 4,
+  },
+  skeletonItem: {
+    backgroundColor: '#E1E9EE',
   },
   skeletonImage: {
     backgroundColor: '#E1E9EE',

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Platform, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, Image, Platform, ActivityIndicator, Alert, View } from 'react-native';
 import { Camera, CameraType, CameraView } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,10 +12,11 @@ import { BackButton } from '@/components/BackButton';
 import { useNavigation, useRouter, useSegments } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Swiper from 'react-native-deck-swiper';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const placeholderImage = require('@/assets/images/favicon.png');
 
-function camera() {
+function CameraScreen() {
   const [hasPermission, setHasPermission] = useState(null);
   const [image, setImage] = useState(null);
   const [error, setError] = useState(null);
@@ -203,10 +203,6 @@ function camera() {
         </View>
       )}
       <BackButton onBackPress={handleBackPress} />
-
-
-
-
       {image ? (
         <View style={styles.resultContainer}>
           <Image source={{ uri: image }} style={styles.imagePreview} />
@@ -229,7 +225,11 @@ function camera() {
           </TouchableOpacity>
         </View>
       ) : (
-        <CameraView style={styles.camera} facing={facing} ref={cameraRef}>
+        <CameraView 
+          style={[styles.camera, { backgroundColor: '#000', flex: 1 }]} 
+          facing={facing} 
+          ref={cameraRef}
+        >
           <View style={styles.categoryContainer}>
             <FlatList
               data={categories}
@@ -283,6 +283,7 @@ function camera() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   categoryContainer: {
@@ -515,6 +516,4 @@ const styles = StyleSheet.create({
 
 });
 
-export default camera;
-
-
+export default CameraScreen;

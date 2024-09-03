@@ -29,6 +29,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import TabLayout from './(app)/home/_layout';
 
 
+
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string;
 
 if (!publishableKey) {
@@ -186,6 +187,14 @@ function RootLayoutNav() {
             }}
           />
            <Drawer.Screen name="(app)/EncyclopediaEntryDetail"  component={EncyclopediaEntryDetail} 
+           options={{
+            headerStyle:{height: 'auto'},
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="document-text" size={size} color={color} />
+            ),
+           }}
+           /> 
+              <Drawer.Screen name="(app)/EncyclopediaEntries"  component={EncyclopediaEntries} 
            options={{
             headerStyle:{height: 'auto'},
             drawerIcon: ({ color, size }) => (
